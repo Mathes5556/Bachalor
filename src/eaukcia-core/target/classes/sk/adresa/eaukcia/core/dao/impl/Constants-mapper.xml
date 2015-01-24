@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="sk.adresa.eaukcia.core.dao.impl.ConstantsMapper">
+
+    <resultMap id = "constantResult" type = "constant">
+        <id property = "id" column = "id"/>
+        <result property = "description" column = "description"/>
+    </resultMap>
+
+    <select id = "getAuctionAction" resultMap = "constantResult" parameterType = "string">
+        SELECT * FROM c_action where id = #{value}
+    </select>
+    
+    <select id = "getAuctionActions" resultMap = "constantResult">
+        SELECT * FROM c_action ORDER BY description
+    </select>
+    
+</mapper>

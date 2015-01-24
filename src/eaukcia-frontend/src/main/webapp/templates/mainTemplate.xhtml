@@ -1,0 +1,263 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" 
+      xmlns:f="http://java.sun.com/jsf/core"
+      xmlns:ui="http://java.sun.com/jsf/facelets"
+      xmlns:rich="http://richfaces.org/rich"
+      xmlns:a4j="http://richfaces.org/a4j"
+      xmlns:h="http://java.sun.com/jsf/html"
+      xmlns:c="http://java.sun.com/jsp/jstl/core">
+
+
+    <f:view locale="#{facesContext.viewRoot.locale}">
+        <head>
+            <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/>
+            <link href="css/style.css" rel="stylesheet" type="text/css"/>
+            <title>ProSale</title>
+            <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
+            </link>
+                <script src="http://code.jquery.com/jquery-latest.min.js"
+            type="text/javascript"></script>
+            <script src="http://code.highcharts.com/highcharts.js"></script>
+            <script src="http://code.highcharts.com/modules/exporting.js"></script>
+            
+            <script type="text/javascript">
+            
+            //<![CDATA[alert("ok3");
+          
+            var childrensNames =  #{auctionBean.childrensNameOfAllId};
+            var childrensValues =  #{auctionBean.childrensValueOfAllId};
+            //making data for pie chart
+            var dataForPieChart = [];
+            for(var id=0;id < childrensValues.length; id++){
+                var childrens = [];
+                for(var i=0;i < childrensNames[id].length; i++){
+                    var children = [childrensNames[id][i], childrensValues[id][i]];
+                    childrens.push(children)
+                }
+                dataForPieChart.push(childrens)
+            }
+            
+            
+            //making data for main chart
+            
+            var idsToShow =  #{auctionBean.ids};
+            var pole = #{auctionBean.historyOfOfferForNodes};
+            var nameOfNodes =#{auctionBean.JSNameOfNode}; 
+            dataToChart = [];
+            for(var i=0;i < pole.length; i++){
+                var line = {};
+                line.data = pole[i];
+                line.name = nameOfNodes[i];
+                dataToChart.push(line);
+            }
+            
+            $(function  () { 
+                   $(document).on('click', ".deleteFilter"  , function() {
+                        var id = parseInt($(this).parent().attr('id'));
+                        alert(id);
+                        var index = idsToShow.indexOf(id);
+                        idsToShow.splice(index, 1);
+
+                        $( this ).parent().hide();
+                   });
+            
+                var redirect = function(url){
+                     window.location.replace(url);
+                };
+                
+                var getUrl = function(){
+                    var BASE_URL = "http://localhost:8080/eaukcia/index.faces?id=";
+                    var result = BASE_URL;
+                    for(var i = 0; i < idsToShow.length;i++){
+                        id = idsToShow[i];
+                        result = result + id;
+                        if(i+1 < idsToShow.length){
+                            result = result + ",";
+                        }
+                    }
+                    return result;
+                };
+                
+                $("#showNewPage").click(function() {
+                    url = getUrl();
+                    redirect(url);
+                });
+                
+                addProduct = function (el){
+                    var id = parseInt(el.value);
+                    idsToShow.push(id);
+                    var name = el.options[el.selectedIndex].innerHTML;
+                    
+                    jQuery('<div/>', {
+                        id: id,
+                        text: name,
+                        html:"<button type='button' class='btn btn-default'>" + name +  "</button>\
+                              <button class='deleteFilter btn btn-danger' type='button'>-</button>"
+                    }).appendTo('#selectedProducts');
+                    //$( "#selectedProducts" ).append( "<div class='deleteFilter' id="+ id+ ">"+ name + "</div><br>" );
+                    //alert(el.value);
+                    //alert(el.options[el.selectedIndex].innerHTML)
+                  
+                };
+                
+                
+                var datesOfOffers = #{auctionBean.offersDate};
+                $('#container').highcharts({
+                    chart: {
+                        type: 'spline'
+                    },
+                    title: {
+                        text: 'Vyvoj ceny'
+                    },
+                    subtitle: {
+                        text: ''
+                    },
+                    xAxis: {
+                          
+                        categories: datesOfOffers
+                    },
+                    yAxis: {
+                        title: {
+                            text: 'Temperature'
+                        },
+                        labels: {
+                            formatter: function () {
+                                return this.value ;
+                            }
+                        }
+                    },
+                    tooltip: {
+                        crosshairs: true,
+                        shared: true
+                    },
+                    plotOptions: {
+                        spline: {
+                            marker: {
+                                radius: 4,
+                                lineColor: '#666666',
+                                lineWidth: 1
+                            }
+                        }
+                    },
+                    series: dataToChart
+                });
+                
+                function drawPieChart (idOfDOM, dataForPieChart, parentName){
+                console.log(dataForPieChart);
+                    $("#" + idOfDOM).highcharts({
+                        chart: {
+                            plotBackgroundColor: null,
+                            plotBorderWidth: 1,//null,
+                            plotShadow: false
+                        },
+                        title: {
+                            text: 'Rolozenie pod-poloziek: ' + parentName
+                        },
+                        tooltip: {
+                            pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'
+                        },
+                        plotOptions: {
+                            pie: {
+                                allowPointSelect: true,
+                                cursor: 'pointer',
+                                dataLabels: {
+                                    enabled: true,
+                                    format: '<b>{point.name}</b>: {point.percentage:.1f} %',
+                                    style: {
+                                        color: (Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black'
+                                    }
+                                }
+                            }
+                        },
+                        series: [{
+                            type: 'pie',
+                            name: 'Browser share',
+                            data: dataForPieChart
+                        }]
+                    });
+                }
+                
+                
+                function drawAllPieCharts(){
+                     for(var i = 0; i < idsToShow.length;i++){
+                            console.log(dataForPieChart);
+                            drawPieChart("pie" + idsToShow[i].toString(), dataForPieChart[i], nameOfNodes[i]);
+                     }
+                }
+                drawAllPieCharts();
+            });
+            //]]>
+            </script>
+        </head>
+        <body>
+            <div>
+             
+                <h:form>
+
+                    <h:selectOneMenu value="products" onchange="addProduct(this)">
+                        <f:selectItems value="#{auctionBean.allProducts}" var="node"
+                        itemValue="#{node.item_id}" itemLabel="#{node.name}"/>
+                        
+                    </h:selectOneMenu>
+                </h:form>
+                <br></br>
+                
+                <h:panelGroup id="selectedProducts">
+                        <ui:repeat var="item" value="#{auctionBean.nodes}">
+                            <div id="#{item.item_id}">
+                              <button type='button' class='btn btn-default'> #{item.name}</button>
+                              <button class='deleteFilter btn btn-danger' type='button'>-</button>
+                            </div> 
+                        </ui:repeat>
+                </h:panelGroup>
+                
+                <button id="showNewPage" type="button" class="btn btn-success">Show</button>
+            </div>
+            <div id="container" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+             <ui:repeat var="item" value="#{auctionBean.ids}">
+                  <div id="pie#{item}" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+             </ui:repeat>
+            
+            
+            <a4j:outputPanel layout="block" style="#{frontendManager.mainWindowStyle}">
+                <center>
+                    <table cellpadding="0" cellspacing="0" border="0">
+                        <tr>
+                            <td class="outer-side-panel">&nbsp;</td>
+                            <td class="inner-left-side-panel">&nbsp;</td>
+                            <td class="center-panel">
+                                <table cellpadding="0" cellspacing="0" border="0">
+                                    <tr>
+                                        <td class="outer-top-panel-1">&nbsp;</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="inner-top-panel">&nbsp;</td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <a4j:outputPanel>
+                                                    <rich:panel styleClass="main-panel">
+                                                        <a4j:outputPanel layout="block" style="width:#{frontendManager.mainPanelWidth}; overflow:auto">
+                                                            <ui:insert name="content"></ui:insert>
+                                                        </a4j:outputPanel>
+                                                    </rich:panel>
+                                            </a4j:outputPanel>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="inner-bottom-panel">&nbsp;</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="outer-bottom-panel-1">&nbsp;</td>
+                                    </tr>
+                                </table>
+                            </td>
+                            <td class="inner-right-side-panel">&nbsp;</td>
+                            <td class="outer-side-panel">&nbsp;</td>
+                        </tr>
+                    </table>
+                </center>
+            </a4j:outputPanel>
+        </body>
+    </f:view>
+</html>

@@ -1,0 +1,73 @@
+<?xml version="1.0"?>
+<faces-config xmlns="http://java.sun.com/xml/ns/javaee"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-facesconfig_1_2.xsd"
+	version="1.2">
+    
+    
+    <application>
+        <view-handler>sk.adresa.eaukcia.frontend.application.CustomViewHandler</view-handler>
+        <view-handler>com.sun.facelets.FaceletViewHandler</view-handler>
+        <view-handler>org.ajax4jsf.application.AjaxViewHandler</view-handler>
+        <variable-resolver>org.springframework.web.jsf.DelegatingVariableResolver</variable-resolver>
+        <message-bundle>sk.adresa.eaukcia.frontend.resources.Eaukcia</message-bundle>
+        <locale-config>
+            <default-locale>sk_SK</default-locale>
+        </locale-config>
+        <resource-bundle>
+            <base-name>sk.adresa.eaukcia.frontend.resources.Eaukcia</base-name>
+            <var>bundle</var>
+        </resource-bundle>
+    </application>
+ 
+    
+    
+   
+    <managed-bean>
+        <managed-bean-name>auctionLogBean</managed-bean-name>
+        <managed-bean-class>sk.adresa.eaukcia.frontend.beans.AuctionLogBean</managed-bean-class>
+        <managed-bean-scope>session</managed-bean-scope>
+        <managed-property>
+            <property-name>auctionLogService</property-name>
+            <value>#{auctionLogService}</value>
+        </managed-property>
+        <managed-property>
+            <property-name>constantsService</property-name>
+            <value>#{constantsService}</value>
+        </managed-property>
+    </managed-bean>
+ 
+    <managed-bean>
+        <managed-bean-name>auctionBean</managed-bean-name>
+        <managed-bean-class>sk.adresa.eaukcia.frontend.beans.AuctionBean</managed-bean-class>
+        <managed-bean-scope>session</managed-bean-scope>
+        <managed-property>
+            <property-name>auctionService</property-name>
+            <value>#{auctionService}</value>
+        </managed-property>
+        <managed-property>
+            <property-name>auctionLogBean</property-name>
+            <value>#{auctionLogBean}</value>
+        </managed-property>
+    </managed-bean>
+ 
+ 
+    <navigation-rule>
+        <from-view-id>*</from-view-id>
+        <navigation-case>
+            <from-outcome>showAuctionLog</from-outcome>
+            <to-view-id>/auctionLogList.xhtml</to-view-id>
+            <redirect/>
+        </navigation-case>
+    </navigation-rule>
+    
+    <navigation-rule>
+        <from-view-id>*</from-view-id>
+        <navigation-case>
+            <from-outcome>showIndex</from-outcome>
+            <to-view-id>/index.xhtml</to-view-id>
+            <redirect/>
+        </navigation-case>
+        
+    </navigation-rule>
+</faces-config>

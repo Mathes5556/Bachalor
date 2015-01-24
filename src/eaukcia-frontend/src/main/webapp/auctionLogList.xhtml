@@ -1,0 +1,126 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml" 
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:rich="http://richfaces.org/rich"
+                xmlns:a4j="http://richfaces.org/a4j"
+                xmlns:t="http://myfaces.apache.org/tomahawk"
+                template="templates/mainTemplate.xhtml">
+    
+    <ui:define name="content">
+        <center>
+            <h2 align="center">
+                <h:outputText value="#{bundle.auctionLogListLabel}"/>
+            </h2>
+            <h3 align="center">
+                <h:outputText value="#{auctionBean.auction.name}"/>
+            </h3>
+            <h:inputHidden value="#{auctionLogBean.forUpdateList}"/>
+            <a4j:form>
+                <center>
+                    <rich:panel style="width:700px">
+                        <f:facet name="header">
+                            <h:outputText value="#{bundle.auctionLogFilterLabel}"/>
+                        </f:facet>
+                        <t:outputLabel styleClass="rsLabel" value="#{bundle.auctionLogActionSelection}:"/>
+                        <rich:pickList value="#{auctionLogBean.selectedActions}" copyAllControlLabel="#{bundle.pickListCopyAll}"
+                                       copyControlLabel="#{bundle.pickListCopy}" removeAllControlLabel="#{bundle.pickListRemoveAll}"
+                                       removeControlLabel="#{bundle.pickListRemove}" sourceListWidth="250" targetListWidth="250">
+                            <f:selectItems value="#{auctionLogBean.auctionActions}"/>
+                        </rich:pickList>
+                        
+                        <h:panelGrid columns="2">
+                            <t:outputLabel styleClass="rsLabel" value="#{bundle.auctionLogValidFrom}:" for="dateValueTimeFrom"/>
+                            <a4j:outputPanel id="dateToPanel" layout="block">
+                                <rich:calendar id="dateValueTimeFrom" value="#{auctionLogBean.timeFrom}" popup="true"
+                                               datePattern="#{settingsBean.calendarDatePattern}" showApplyButton="false"
+                                               cellWidth="24px" cellHeight="22px" style="width:200px"></rich:calendar>
+                            </a4j:outputPanel>
+                            <t:outputLabel styleClass="rsLabel" value="#{bundle.auctionLogValidUntil}:" for="dateValueTimeTo"/>
+                            <a4j:outputPanel id="dateFromPanel" layout="block">
+                                <rich:calendar id="dateValueTimeTo" value="#{auctionLogBean.timeTo}" popup="true"
+                                               datePattern="#{settingsBean.calendarDatePattern}" showApplyButton="false"
+                                               cellWidth="24px" cellHeight="22px" style="width:200px"></rich:calendar>
+                            </a4j:outputPanel>
+                            <t:outputLabel styleClass="rsLabel" value="#{bundle.auctionLogLogin}:" for="loginInput"/>
+                            <a4j:outputPanel>
+                                <t:inputText id="loginInput" value="#{auctionLogBean.targetUser}"/>
+                            </a4j:outputPanel>
+                        </h:panelGrid>
+                        <br/>
+                        <h:panelGrid columns="2">
+                            <a4j:commandButton styleClass="button" action="#{auctionLogBean.updateList}" value="#{bundle.applyFilterLabel}" reRender="auctionLogList, sc"/>
+                        </h:panelGrid>
+                    </rich:panel>
+                </center>
+            </a4j:form>
+            <br/>
+            <br/>
+             <h:form>
+                <a4j:outputPanel layout="block" style="overflow:auto">
+                    <center>
+                        <rich:dataTable rowKeyVar="row" width="1000px"
+                                        onRowMouseOver="this.style.backgroundColor='#F1F1F1'"
+                                        onRowMouseOut="this.style.backgroundColor='#{a4jSkin.tableBackgroundColor}'"
+                                        id="auctionLogList" rows="15" columnClasses="col"
+                                        value="#{auctionLogBean.auctionLogList}" var="auctionLog" columns="6">
+                            <rich:column filterBy="#{auctionLog.uiActionDescription}" filterEvent="onkeyup"
+                                         sortBy="#{auctionLog.uiActionDescription}" width="5%" style="#{auctionLog.uiStyle}">
+                                <f:facet name="header">
+                                    <h:outputText value="#{bundle.actionDescription}"/>
+                                </f:facet>
+                                <h:outputText value="#{auctionLog.uiActionDescription}" style="font-size:10pt"/>
+                            </rich:column>
+                            <rich:column sortBy="#{auctionLog.time}" width="5%" style="#{auctionLog.uiStyle}">
+                                <f:facet name="header">
+                                    <h:outputText value="#{bundle.time}"/>
+                                </f:facet>
+                                <h:outputText value="#{auctionLog.time}" style="font-size:10pt">
+                                    <f:convertDateTime pattern="dd.MM.yyyy HH:mm:ss" type="both" timeZone="Europe/Bratislava"/>
+                                </h:outputText>
+                            </rich:column>
+                            <rich:column sortBy="#{auctionLog.user.login}" width="5%" style="#{auctionLog.uiStyle}">
+                                <f:facet name="header">
+                                    <h:outputText value="#{bundle.userLogin}"/>
+                                </f:facet>
+                                <h:outputText value="#{auctionLog.user.login}" style="font-size:10pt"/>
+                            </rich:column>
+                            <rich:column sortBy="#{auctionLog.targetUserId}" width="5%" style="#{auctionLog.uiStyle}">
+                                <f:facet name="header">
+                                    <h:outputText value="#{bundle.auctionLogTargetUser}"/>
+                                </f:facet>
+                                <h:outputText value="#{auctionLog.targetUserId}" style="font-size:10pt"/>
+                            </rich:column>
+                            <rich:column width="2%" style="#{auctionLog.uiStyle}">
+                                <f:facet name="header">
+                                    <h:outputText value="#{bundle.auctionLogRound}"/>
+                                </f:facet>
+                                <h:outputText value="#{auctionLog.round}" style="font-size:10pt"/>
+                            </rich:column>
+                            <rich:column width="83%" style="#{auctionLog.uiStyle}">
+                                <f:facet name="header">
+                                    <h:outputText value="#{bundle.auctionLogValue}"/>
+                                </f:facet>
+                                <h:outputText value="#{auctionLog.uiValue}" style="font-size:10pt"/>
+                            </rich:column>
+                        </rich:dataTable>
+                        <rich:spacer height="5"/>
+                        <rich:datascroller align="center" for="auctionLogList" maxPages="20" pageIndexVar="pageIndex" pagesVar="pages"
+                                           id="sc" binding="#{auctionLogBean.dataScroller}">
+                            <f:facet name="pages">
+                                <h:outputText value="#{pageIndex} / #{pages}"></h:outputText>
+                            </f:facet>
+                        </rich:datascroller>
+                    </center>
+                </a4j:outputPanel>
+            </h:form>
+            <br/>
+            <br/>
+        </center>
+        <h:form>
+            <a4j:commandButton styleClass="button" id="cancelAuctionLog"  value="#{bundle.menuBack}" action="showIndex">  
+            </a4j:commandButton>
+        </h:form>
+    </ui:define>
+</ui:composition>

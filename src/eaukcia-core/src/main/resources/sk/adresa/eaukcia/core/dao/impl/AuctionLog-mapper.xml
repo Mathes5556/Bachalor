@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="sk.adresa.eaukcia.core.dao.impl.AuctionLogMapper">
+
+    <resultMap id = "auctionLogResult" type = "auctionEvent">
+        <id property = "id" column = "id"/>
+        <result property = "auction.id" column = "fk_auction"/>
+        <result property = "round" column = "fk_auction_round"/>
+        <result property = "user.login" column = "fk_user"/>
+        <result property = "targetUserId" column = "fk_target_user"/>
+        <result property = "action" column = "fk_action"/>
+        <result property = "actionDescription"  column="description"/>
+        <result property = "value" column = "value"/>
+        <result property = "time" column = "time"/>
+    </resultMap>
+
+
+     <select id = "getRequirments"  resultType="sk.adresa.eaukcia.core.data.RequirementNode" >
+        SELECT item_id, code, name, unit_Type, fk_parent, order_no
+            FROM auction_criterion_list
+     </select>
+     
+     <select id = "getAuctionLogs"  resultType="sk.adresa.eaukcia.core.data.Event" >
+        SELECT item_id, numeric_value, round, fk_user, last_modified
+            FROM auction_user_criterion_list 
+            
+     </select>
+    
+    
+    <select id = ";" resultMap = "auctionLogResult" parameterType = "auctionEventFilter">
+        SELECT 
+            auction_log.id,  
+            fk_auction, 
+            fk_auction_round, 
+            fk_user,fk_target_user, 
+            fk_action ,
+            description, 
+            value, 
+            time
+        FROM auction_log JOIN c_action ON auction_log.fk_action = c_action.id
+        <where>
+            <if test="timeFrom != null">
+                AND time &gt;= #{timeFrom}
+            </if>
+            <if test="timeTo != null">
+                AND time &lt;= #{timeTo}
+            </if>
+            <if test="targetUserId != null or (users != null and users.size > 0)">
+                AND (
+                    <trim prefixOverrides="OR">
+                        fk_user IN
+                        <foreach item="userId" index="index" collection="users" open="(" close=")" separator=",">
+                            #{userId}
+                        </foreach>
+                        <if test="targetUserId != null">
+                            OR fk_target_user = #{targetUserId}
+                        </if>
+                    </trim>
+                )
+            </if>
+            <if test="auctions != null and auctions.size > 0">
+                AND (
+                    fk_auction IN
+                    <foreach item="auctionId" index="index" collection="auctions" open="(" close=")" separator=",">
+                        #{auctionId}
+                    </foreach>
+                    
+                    OR (
+                        fk_auction = 0 AND 
+                        EXISTS (
+                            SELECT au.fk_user FROM auction_user au WHERE au.fk_auction IN
+                            <foreach item="auctionId" index="index" collection="auctions" open="(" close=")" separator=",">
+                                #{auctionId}
+                            </foreach> AND au.fk_user = fk_user
+                        
+                        )
+                    )
+                )
+            </if>
+            <if test="actions != null and actions.size > 0">
+                AND fk_action IN
+                <foreach item="actionId" index="index" collection="actions" open="(" close=")" separator=",">
+                    #{actionId}
+                </foreach>
+            </if>
+            <if test="rounds != null and rounds.size > 0">
+                AND fk_auction_round IN
+                <foreach item="roundId" index="index" collection="rounds" open="(" close=")" separator=",">
+                    #{roundId}
+                </foreach>
+            </if>
+        </where>
+        ORDER BY time DESC
+    </select>
+    
+    <select id = "countFilteredAuctionLogs" resultType = "int" parameterType = "auctionEventFilter">
+        SELECT count(*) 
+        FROM auction_log 
+        <where>
+            <if test="timeFrom != null">
+                AND time &gt;= #{timeFrom}
+            </if>
+            <if test="timeTo != null">
+                AND time &lt;= #{timeTo}
+            </if>
+            <if test="targetUserId != null or (users != null and users.size > 0)">
+                AND (
+                    <trim prefixOverrides="OR">
+                        fk_user IN
+                        <foreach item="userId" index="index" collection="users" open="(" close=")" separator=",">
+                            #{userId}
+                        </foreach>
+                        <if test="targetUserId != null">
+                            OR fk_target_user = #{targetUserId}
+                        </if>
+                    </trim>
+                )
+            </if>
+            <if test="auctions != null and auctions.size > 0">
+                AND fk_auction IN
+                <foreach item="auctionId" index="index" collection="auctions" open="(" close=")" separator=",">
+                    #{auctionId}
+                </foreach>
+            </if>
+            <if test="actions != null and actions.size > 0">
+                AND fk_action IN
+                <foreach item="actionId" index="index" collection="actions" open="(" close=")" separator=",">
+                    #{actionId}
+                </foreach>
+            </if>
+            <if test="rounds != null and rounds.size > 0">
+                AND fk_auction_round IN
+                <foreach item="roundId" index="index" collection="rounds" open="(" close=")" separator=",">
+                    #{roundId}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <select id = "getAuctionLog" resultMap = "auctionLogResult" parameterType = "int">
+        SELECT 
+            auction.id,  
+            auction.fk_auction, 
+            auction.fk_auction_round, 
+            auction.fk_user,
+            auction.fk_target_user, 
+            auction.fk_action,
+            auction.value, 
+            auction.time
+        FROM auction_log auction
+        WHERE id=#{value}
+    </select>
+ 
+</mapper>

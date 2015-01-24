@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration
+    PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-config.dtd">
+
+<configuration>
+    <typeAliases>
+        <typeAlias type = "sk.adresa.eaukcia.core.data.Constant" alias = "constant"/>
+        <typeAlias type = "sk.adresa.eaukcia.core.data.Auction" alias = "auction"/>
+        <typeAlias type = "sk.adresa.eaukcia.core.data.filter.AuctionFilter" alias = "auctionFilter"/>
+        <typeAlias type = "sk.adresa.eaukcia.core.data.AuctionEvent" alias = "auctionEvent"/>
+        <typeAlias type = "sk.adresa.eaukcia.core.data.filter.AuctionEventFilter" alias = "auctionEventFilter"/>
+    </typeAliases>
+
+</configuration>

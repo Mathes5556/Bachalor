@@ -1,0 +1,207 @@
+.outer-side-panel{
+    background-color:#328b83;
+    color:#328b83;
+    width:40px;
+    height:100%;
+}
+
+.center-panel{
+    background-color:#328b83;
+    color:#328b83;
+    height:100%;
+}
+
+.inner-left-side-panel{
+    background-color:#004040;
+    width:8px;
+    height:100%;
+}
+
+.inner-right-side-panel{
+    background-color:#004040;
+    width:8px;
+    height:100%;
+}
+
+
+.outer-top-panel-1{
+    background-color:#1a7771;
+    min-height: 40px;
+    height: 40px;
+}
+
+.inner-top-panel{
+    background-color:#004040;
+    min-height: 20px;
+    height: 20px;
+}
+
+.outer-bottom-panel-1{
+    background-color:#84cfbf;
+    min-height: 40px;
+    height: 40px;
+}
+
+.inner-bottom-panel{
+    background-color:#FFFFFF;
+    min-height: 5px;
+    height: 5px;
+}
+
+.main-panel{
+    background-color:#cdf8e7;
+}
+
+.main-panelfloat{
+    float:left;
+    background-color:#cdf8e7;
+    width:100%;
+}
+
+.col, .col2 { 
+    width:auto;
+    max-width:40%;
+    vertical-align:top;
+}
+
+.row1{
+    background-color:#84cfbf;
+}
+
+.row2{
+    background-color:#b5e9e1;
+}
+
+.row3{
+    background-color:#cdf8e7;
+}
+
+.row4 {
+    background-color:#FFFFFF;
+}
+
+.colBlank {
+}
+
+.col20px {
+    width:20px;
+}
+
+.col40px {
+    width:40px;
+}
+
+.col60px {
+    width:60px;
+}
+
+.col80px {
+    width:80px;
+}
+
+.col240px {
+    width:240px;
+}
+                    
+.chatDiv {
+  border-top:1px solid #000000;
+  font-size:10px;
+  background-color:#B1B1B1;
+  color:black;
+}
+
+.formatError {
+    color:red;
+    
+}
+
+.formatErrorLarge {
+    color:red;
+    font-size:16px;
+}
+
+.icon {
+    width:1.4em;
+    height:1.4em;
+}
+.iconBig {
+    width:2.8em;
+    height:2.8em;
+}
+div.j4fryPanel {
+  border: 1px solid #000000;
+  color:white;
+  width:303px;
+}
+.tooltip {
+   background-color:#fffeae;
+}
+
+div.j4fryPanelHead {
+  padding:0.4em 0.6em 0.4em 0.6em;
+  font-size:10px;
+  font-weight:bold;
+  text-align:right;
+  background-color:#494949;
+  width:291px;
+}
+
+div.j4fryPanelToggle {
+  margin-right:3px;
+}
+
+div.j4fryPanelBody {
+  border-top:1px solid #000000;
+  font-size:10px;
+  background-color:#B1B1B1;
+  color:black;
+  width:100%;
+}
+
+.moneyFont {
+    font-weight:bold;
+    font-size:140%;
+    background-color:#494949;
+}
+
+
+.rich-menu-group{
+    background-color:#FFFFFF;
+}
+
+.rich-menu-group:hover{
+    border: 1px solid #fffeae;
+    background-color:#fffeae;
+}
+
+.rich-menu-item{
+    background-color:#FFFFFF;
+}
+
+.rich-menu-item:hover{
+    border: 1px solid #fffeae;
+    background-color:#fffeae;
+}
+
+.rich-menu-separator{
+    background-color:#cdf8e7;
+}
+
+.rich-filter-input{
+    width:75px;
+}
+
+.tooltip {
+  color:black;
+}
+
+.button{
+    background-color:#81c9fb;
+    border: 1px solid; 
+    border-color: #696 #363 #363 #696;
+    margin: 2px 2px;
+}
+
+
+
+

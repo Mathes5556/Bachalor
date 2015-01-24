@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="sk.adresa.eaukcia.core.dao.impl.AuctionMapper">
+
+    
+    <resultMap id = "auctionResult" type = "auction">
+        <id property = "id" column = "id"/>
+        <result property = "description" column = "description"/>
+        <result property = "name" column = "auction_name"/>
+    </resultMap>  
+ 
+ 
+    <select id = "getFilteredAuctions" resultMap = "auctionResult" parameterType = "auctionFilter">
+        SELECT * 
+        FROM v_auction 
+        ORDER BY id ASC
+    </select>
+    
+    <select id = "countFilteredAuctions" resultType = "int" parameterType = "auctionFilter">
+        SELECT count(*) 
+        FROM v_auction 
+    </select>
+
+    <select id = "getAuction" resultMap = "auctionResult" parameterType = "int">
+        SELECT * FROM v_auction WHERE id = #{value}
+    </select>
+
+</mapper>
