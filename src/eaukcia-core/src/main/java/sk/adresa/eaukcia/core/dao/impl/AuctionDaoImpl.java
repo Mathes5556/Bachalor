@@ -70,9 +70,10 @@ public class AuctionDaoImpl extends AbstractDao implements AuctionDao {
     
     @Override
     public PaginatedList<Auction> getFilteredAuctions(AuctionFilter filter, Paging paging) {
-       FacesContext context = FacesContext.getCurrentInstance();
-       Map<String,String> getParams = context.getExternalContext().getRequestParameterMap();
        /*
+        FacesContext context = FacesContext.getCurrentInstance();
+       Map<String,String> getParams = context.getExternalContext().getRequestParameterMap();
+       
        List<Event> events = sqlSession.selectList(DEFAULT_PREFIX2 + "getAuctionLogs");
        HashMap<Integer, ArrayList<Event>> nodeEvents = AuctionServiceImpl.offersEventToMap(events);
        
@@ -92,10 +93,10 @@ public class AuctionDaoImpl extends AbstractDao implements AuctionDao {
        }
        
       
+       */
        
        
        
-       /*
         AuctionLogDaoImpl auctionLog = new AuctionLogDaoImpl();
         auctionLog.setSqlSession(sqlSession);
         System.out.print("faak");
@@ -120,7 +121,10 @@ public class AuctionDaoImpl extends AbstractDao implements AuctionDao {
             
         }
         
+        
+        
         Deque queue = new ArrayDeque();
+        /*
         HashMap<Integer, RequirementNode> requirementNodes = new HashMap<Integer, RequirementNode>();
         //TODO naplnenie z DB
         

@@ -36,6 +36,13 @@ public class RequirementNode {
     
     private ArrayList<Event> offerEvents = new ArrayList<Event>();
     
+    public Double getLastOffer(){
+        int idOffer = this.offerEvents.size() - 1;
+        Double value = this.offerEvents.get(idOffer).getNumeric_value().doubleValue();
+        return value;
+    }
+
+        
     public void addOfferEvent(Event event){
         this.offerEvents.add(event);
     }

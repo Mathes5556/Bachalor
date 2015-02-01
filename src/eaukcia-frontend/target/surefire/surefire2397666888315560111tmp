@@ -1,0 +1,6 @@
+#surefire
+#Thu Jan 29 23:09:57 CET 2015
+user.dir=/home/mathes/Documents/Bakalarka/eaukcia_sp/trunk/src/eaukcia-frontend
+localRepository=/home/mathes/.m2/repository
+netbeans.deploy=true
+basedir=/home/mathes/Documents/Bakalarka/eaukcia_sp/trunk/src/eaukcia-frontend

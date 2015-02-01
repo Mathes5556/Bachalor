@@ -12,6 +12,7 @@
         <head>
             <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/>
             <link href="css/style.css" rel="stylesheet" type="text/css"/>
+            <link href="css/style-tree.css" rel="stylesheet" type="text/css"/>
             <title>ProSale</title>
             <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
             </link>
@@ -19,11 +20,187 @@
             type="text/javascript"></script>
             <script src="http://code.highcharts.com/highcharts.js"></script>
             <script src="http://code.highcharts.com/modules/exporting.js"></script>
-            
+            <script type="text/javascript" 
+                src="js/d3.js">
+            </script>
+            <script type="text/javascript" 
+                 src="js/d3.layout.js">
+            </script>
             <script type="text/javascript">
             
             //<![CDATA[alert("ok3");
-          
+            
+       
+            
+            //making data for main chart
+           
+            var idsToShow =  #{auctionBean.ids};
+            var pole = #{auctionBean.historyOfOfferForNodes};
+            var nameOfNodes =#{auctionBean.JSNameOfNode}; 
+            dataToChart = [];
+            for(var i=0;i < pole.length; i++){
+                var line = {};
+                line.data = pole[i];
+                line.name = nameOfNodes[i];
+                dataToChart.push(line);
+            }
+            
+            $(function  () {    
+             function drawTree(DOMelement){
+                 var m = [40, 120, 40, 120],
+                        w = 1200 - m[1] - m[3],
+                        h = 600 - m[0] - m[2],
+                        i = 0,
+                        root;
+
+                    var tree = d3.layout.tree()
+                        .size([h, w]);
+
+                    var diagonal = d3.svg.diagonal()
+                        .projection(function(d) { return [d.y, d.x]; });
+
+                    var vis = d3.select(DOMelement).append("svg:svg")
+                        .attr("width", w + m[1] + m[3])
+                        .attr("height", h + m[0] + m[2])
+                      .append("svg:g")
+                        .attr("transform", "translate(" + m[3] + "," + m[0] + ")");
+
+                    d3.json("js/flame.json", function(json) {
+                      //root = json;
+                      root = #{auctionBean.hierarchyForTree};
+                      root.x0 = h / 2;
+                      root.y0 = 0;
+                      console.log(root);
+                      function toggleAll(d) {
+                        if (d.children) {
+                          d.children.forEach(toggleAll);
+                          toggle(d);
+                        }
+                      }
+
+                      // Initialize the display to show a few nodes.
+                      root.children.forEach(toggleAll);
+                      //toggle(root.children[1]);
+                      //toggle(root.children[1].children[2]);
+                     // toggle(root.children[9]);
+                      //toggle(root.children[9].children[0]);
+
+                      update(root);
+                    });
+                 
+                function update(source) {
+                     var duration = d3.event && d3.event.altKey ? 5000 : 500;
+
+                     // Compute the new tree layout.
+                     var nodes = tree.nodes(root).reverse();
+
+                     // Normalize for fixed-depth.
+                     nodes.forEach(function(d) { d.y = d.depth * 180; });
+
+                     // Update the nodes…
+                     var node = vis.selectAll("g.node")
+                         .data(nodes, function(d) { return d.id || (d.id = ++i); });
+
+                     // Enter any new nodes at the parent's previous position.
+                     var nodeEnter = node.enter().append("svg:g")
+                         .attr("class", "node")
+                         .attr("transform", function(d) { return "translate(" + source.y0 + "," + source.x0 + ")"; })
+                         .on("click", function(d) { toggle(d); update(d); });
+
+                     nodeEnter.append("svg:circle")
+                         .attr("r", 1e-6)
+                         .style("fill", function(d) { return d._children ? "lightsteelblue" : "#fff"; });
+
+                     nodeEnter.append("svg:text")
+                         .attr("x", function(d) { return d.children || d._children ? -10 : 10; })
+                         .attr("dy", ".35em")
+                         .attr("text-anchor", function(d) { return d.children || d._children ? "end" : "start"; })
+                         .text(function(d) { return d.name; })
+                         .style("fill-opacity", 1e-6);
+
+                     // Transition nodes to their new position.
+                     var nodeUpdate = node.transition()
+                         .duration(duration)
+                         .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; });
+
+                     nodeUpdate.select("circle")
+                         .attr("r", 4.5)
+                         .style("fill", function(d) { return d._children ? "lightsteelblue" : "#fff"; });
+
+                     nodeUpdate.select("text")
+                         .style("fill-opacity", 1);
+
+                     // Transition exiting nodes to the parent's new position.
+                     var nodeExit = node.exit().transition()
+                         .duration(duration)
+                         .attr("transform", function(d) { return "translate(" + source.y + "," + source.x + ")"; })
+                         .remove();
+
+                     nodeExit.select("circle")
+                         .attr("r", 1e-6);
+
+                     nodeExit.select("text")
+                         .style("fill-opacity", 1e-6);
+
+                     // Update the links…
+                     var link = vis.selectAll("path.link")
+                         .data(tree.links(nodes), function(d) { return d.target.id; });
+
+                     // Enter any new links at the parent's previous position.
+                     link.enter().insert("svg:path", "g")
+                         .attr("class", "link")
+                         .attr("d", function(d) {
+                           var o = {x: source.x0, y: source.y0};
+                           return diagonal({source: o, target: o});
+                         })
+                       .transition()
+                         .duration(duration)
+                         .attr("d", diagonal);
+
+                     // Transition links to their new position.
+                     link.transition()
+                         .duration(duration)
+                         .attr("d", diagonal);
+
+                     // Transition exiting nodes to the parent's new position.
+                     link.exit().transition()
+                         .duration(duration)
+                         .attr("d", function(d) {
+                           var o = {x: source.x, y: source.y};
+                           return diagonal({source: o, target: o});
+                         })
+                         .remove();
+
+                     // Stash the old positions for transition.
+                     nodes.forEach(function(d) {
+                       d.x0 = d.x;
+                       d.y0 = d.y;
+                     });
+                   }
+
+                   // Toggle children.
+                   function toggle(d) {
+                     if (d.children) {
+                       d._children = d.children;
+                       d.children = null;
+                     } else {
+                       d.children = d._children;
+                       d._children = null;
+                     }
+                   }
+
+                 
+                 
+             }   
+            
+             for(var i = 0; i < idsToShow.length;i++){
+                        id = idsToShow[i];
+                        drawTree(".tree" + id.toString(), id);
+             }
+        
+            // ################## end of tree ###################
+            
+            
             var childrensNames =  #{auctionBean.childrensNameOfAllId};
             var childrensValues =  #{auctionBean.childrensValueOfAllId};
             //making data for pie chart
@@ -38,28 +215,15 @@
             }
             
             
-            //making data for main chart
             
-            var idsToShow =  #{auctionBean.ids};
-            var pole = #{auctionBean.historyOfOfferForNodes};
-            var nameOfNodes =#{auctionBean.JSNameOfNode}; 
-            dataToChart = [];
-            for(var i=0;i < pole.length; i++){
-                var line = {};
-                line.data = pole[i];
-                line.name = nameOfNodes[i];
-                dataToChart.push(line);
-            }
-            
-            $(function  () { 
-                   $(document).on('click', ".deleteFilter"  , function() {
-                        var id = parseInt($(this).parent().attr('id'));
-                        alert(id);
-                        var index = idsToShow.indexOf(id);
-                        idsToShow.splice(index, 1);
+                $(document).on('click', ".deleteFilter"  , function() {
+                     var id = parseInt($(this).parent().attr('id'));
+                     alert(id);
+                     var index = idsToShow.indexOf(id);
+                     idsToShow.splice(index, 1);
 
-                        $( this ).parent().hide();
-                   });
+                     $( this ).parent().hide();
+                });
             
                 var redirect = function(url){
                      window.location.replace(url);
@@ -190,10 +354,9 @@
             </script>
         </head>
         <body>
+           
             <div>
-             
                 <h:form>
-
                     <h:selectOneMenu value="products" onchange="addProduct(this)">
                         <f:selectItems value="#{auctionBean.allProducts}" var="node"
                         itemValue="#{node.item_id}" itemLabel="#{node.name}"/>
@@ -214,50 +377,20 @@
                 <button id="showNewPage" type="button" class="btn btn-success">Show</button>
             </div>
             <div id="container" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+            
+            
              <ui:repeat var="item" value="#{auctionBean.ids}">
-                  <div id="pie#{item}" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+                 <div class="row">
+                     
+                    <div class="col-md-12">
+                        <div class ="tree#{item}"></div>
+                    </div> 
+                     <div class="col-md-12">
+                        <div id="pie#{item}" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+                    </div> 
+                  </div>
              </ui:repeat>
-            
-            
-            <a4j:outputPanel layout="block" style="#{frontendManager.mainWindowStyle}">
-                <center>
-                    <table cellpadding="0" cellspacing="0" border="0">
-                        <tr>
-                            <td class="outer-side-panel">&nbsp;</td>
-                            <td class="inner-left-side-panel">&nbsp;</td>
-                            <td class="center-panel">
-                                <table cellpadding="0" cellspacing="0" border="0">
-                                    <tr>
-                                        <td class="outer-top-panel-1">&nbsp;</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="inner-top-panel">&nbsp;</td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <a4j:outputPanel>
-                                                    <rich:panel styleClass="main-panel">
-                                                        <a4j:outputPanel layout="block" style="width:#{frontendManager.mainPanelWidth}; overflow:auto">
-                                                            <ui:insert name="content"></ui:insert>
-                                                        </a4j:outputPanel>
-                                                    </rich:panel>
-                                            </a4j:outputPanel>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td class="inner-bottom-panel">&nbsp;</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="outer-bottom-panel-1">&nbsp;</td>
-                                    </tr>
-                                </table>
-                            </td>
-                            <td class="inner-right-side-panel">&nbsp;</td>
-                            <td class="outer-side-panel">&nbsp;</td>
-                        </tr>
-                    </table>
-                </center>
-            </a4j:outputPanel>
+          
         </body>
     </f:view>
 </html>

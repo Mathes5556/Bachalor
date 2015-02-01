@@ -1,6 +1,7 @@
 package sk.adresa.eaukcia.frontend.beans;
 
 
+import com.google.gson.Gson;
 import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.text.Format;
@@ -25,6 +26,7 @@ import net.sf.json.JSON;
 import org.apache.log4j.Logger;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.json.JSONObject;
 
 import org.richfaces.component.UIDataTable;
 import org.richfaces.component.html.HtmlDataTable;
@@ -115,6 +117,93 @@ public class AuctionBean {
         return result;        
     }
     
+    final public static String NAME = "name";
+    
+    final public static String CHILDRENS = "children";
+    
+    final public static int MAX_LEVEL_FOR_TREE = 1;
+    /**
+     *  get hierarchy JSON object for visualization into tree
+     * 
+     * @param rootID
+     * @return 
+     */
+    public String getHierarchyForTree(){
+        HashMap<String, Object> result =  new HashMap<String, Object>();
+        
+        //
+        RequirementNode node = this.productNodes.get(new Integer(this.getIds().get(0)));
+        
+        Double bestValue = node.getLastOffer();
+       // String showingText = new StringBuilder()
+         //                       .append(node.getName())
+           //                     .append("  ")
+             //                   .append(bestValue.toString()).toString();
+        result.put(NAME, node.getName());
+        
+        ArrayList<HashMap<String, Object>> childrens = new ArrayList<HashMap<String, Object>>();
+        for(RequirementNode children :  node.getChildrens()){
+                // only for one in comment 
+            //HashMap<String, Object> childrenHashMap = new HashMap<String, Object>();
+            //childrenHashMap.put(NAME, children.getName());
+            
+            
+            HashMap<String, Object> childrenHashMap = this.getChildrenHashMap(children, MAX_LEVEL_FOR_TREE);
+            
+            childrens.add(childrenHashMap);
+        }
+        
+        result.put(CHILDRENS, childrens);
+        
+        JSONObject json = new JSONObject(result);
+        return json.toString();
+    }
+    
+    private HashMap<String, Object> getChildrenHashMap(RequirementNode node, int level){
+        HashMap<String, Object> result =  new HashMap<String, Object>();
+        result.put(NAME, node.getName());
+        ArrayList<HashMap<String, Object>> childrens = new ArrayList<HashMap<String, Object>>();
+        for(RequirementNode children :  node.getChildrens()){
+            if(level == 0){
+                 HashMap<String, Object> childrenHashMap = new HashMap<String, Object>();
+                childrenHashMap.put(NAME, children.getName());
+                childrens.add(childrenHashMap);
+            }
+            else{
+                HashMap<String, Object> childrenHashMap = this.getChildrenHashMap(children, level -1);
+                childrens.add(childrenHashMap);
+            }    
+        }
+        
+        result.put(CHILDRENS, childrens);
+        return result;
+    }
+    /*
+    public String getTree(){
+        RequirementNode root = this.productNodes.get(new Integer(0));
+        //HashMap<String, Object> result = this.getCreateHashMapForNode(root);
+        JSONObject json = new JSONObject(root);
+        return json.toString();
+    }
+    
+    private HashMap<String, Object> getCreateHashMapForNode(RequirementNode node){
+        HashMap<String, Object> result =  new HashMap<String, Object>();
+        result.put(NAME, node.getName());
+        
+        ArrayList<RequirementNode> childrens = node.getChildrens();
+        if(childrens.isEmpty()){            
+             result.put("SIZE", 1000); //TODO make price of node
+             return result;
+        }
+        ArrayList<HashMap<String, Object>> childrenHashMap = new ArrayList<HashMap<String, Object>>();
+        for(RequirementNode children :  childrens){
+            HashMap<String, Object> recursion = this.getCreateHashMapForNode(children);
+            childrenHashMap.add(recursion);
+        }
+        result.put(CHILDRENS, childrens);
+        return null;
+    }
+    */
     /**
      *  Get date in string of all offers
      * 
@@ -151,7 +240,7 @@ public class AuctionBean {
     }
     
     /**
-     *  get json value of all children fol all ids
+     *  get json value of all children for all ids
      * 
      * @return 
      */

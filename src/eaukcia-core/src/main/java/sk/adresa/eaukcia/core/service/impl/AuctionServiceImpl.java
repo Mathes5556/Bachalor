@@ -50,6 +50,8 @@ public class AuctionServiceImpl extends AbstractDao implements AuctionService {
             
     @Override
     public HashMap<Integer, RequirementNode> getAuctionHashMap(){
+       this.auctionDao.getFilteredAuctions(null, null);
+        
        List<Event> events = this.auctionDao.getAllEvents();
        List<RequirementNode> requirments =  this.auctionDao.getAllRequirementForAuction();
        HashMap<Integer, ArrayList<Event>> nodeEvents = offersEventToMap(events);
