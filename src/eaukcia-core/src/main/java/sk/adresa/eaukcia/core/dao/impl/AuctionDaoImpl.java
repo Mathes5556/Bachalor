@@ -59,6 +59,7 @@ public class AuctionDaoImpl extends AbstractDao implements AuctionDao {
     @Override
     public List<Event> getAllEvents(){
          List<Event> events = sqlSession.selectList(DEFAULT_PREFIX2 + "getAuctionLogs");
+         AuctionEvent e = (AuctionEvent) sqlSession.selectOne(DEFAULT_PREFIX2 + "getAuctionLog", 1);
          return events;
     }
     
@@ -94,7 +95,7 @@ public class AuctionDaoImpl extends AbstractDao implements AuctionDao {
        
       
        */
-       
+       /*
        
        
         AuctionLogDaoImpl auctionLog = new AuctionLogDaoImpl();

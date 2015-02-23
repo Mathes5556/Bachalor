@@ -77,6 +77,8 @@ public class AuctionBean {
     
     @PostConstruct
     public void initBean(){
+        //AuctionLogDaoImpl log = new AuctionLogDaoImpl();
+        //AuctionEvent event = log.getAuctionLog(55);
         this.productNodes = this.auctionService.getAuctionHashMap();
     }
     

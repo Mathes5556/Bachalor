@@ -43,14 +43,14 @@ public class AuctionServiceImpl extends AbstractDao implements AuctionService {
     @Override
     public PaginatedList<Auction> getFilteredAuctions(AuctionFilter filter, Paging paging) {
         Assert.isNotNull(paging, "paging");
-        return auctionDao.getFilteredAuctions(filter, paging);
+        return null;
     }
     
     
             
     @Override
     public HashMap<Integer, RequirementNode> getAuctionHashMap(){
-       this.auctionDao.getFilteredAuctions(null, null);
+       //this.auctionDao.getFilteredAuctions(null, null);
         
        List<Event> events = this.auctionDao.getAllEvents();
        List<RequirementNode> requirments =  this.auctionDao.getAllRequirementForAuction();
