@@ -4,8 +4,10 @@
  */
 package sk.adresa.eaukcia.core.service;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import sk.adresa.eaukcia.core.data.Auction;
+import sk.adresa.eaukcia.core.data.BidForItem;
 import sk.adresa.eaukcia.core.data.RequirementNode;
 import sk.adresa.eaukcia.core.data.filter.AuctionFilter;
 import sk.adresa.eaukcia.core.exception.EaukciaObjectNotFoundException;
@@ -40,6 +42,8 @@ public interface AuctionService {
      * @return 
      */
     public HashMap<Integer, RequirementNode> getAuctionHashMap();
+    
+    public ArrayList<HashMap<Integer,BidForItem>>  getBids();
     
 }
 

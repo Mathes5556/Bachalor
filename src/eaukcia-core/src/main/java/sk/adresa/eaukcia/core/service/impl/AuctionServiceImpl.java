@@ -12,6 +12,7 @@ import javax.faces.context.FacesContext;
 import sk.adresa.eaukcia.core.dao.AuctionDao;
 import sk.adresa.eaukcia.core.dao.impl.AbstractDao;
 import sk.adresa.eaukcia.core.data.Auction;
+import sk.adresa.eaukcia.core.data.BidForItem;
 import sk.adresa.eaukcia.core.data.Event;
 import sk.adresa.eaukcia.core.data.RequirementNode;
 import sk.adresa.eaukcia.core.data.filter.AuctionFilter;
@@ -33,7 +34,8 @@ public class AuctionServiceImpl extends AbstractDao implements AuctionService {
         Assert.isNotNull(auctionDao, "auctionDao");
         this.auctionDao = auctionDao;
     }
-
+    
+    
     @Override
     public Auction getAuction(int auctionId) {
         Assert.isNotNegativeOrZero(auctionId, "auctionId");
@@ -46,7 +48,10 @@ public class AuctionServiceImpl extends AbstractDao implements AuctionService {
         return null;
     }
     
-    
+    @Override
+    public ArrayList<HashMap<Integer,BidForItem>>  getBids(){
+        return this.auctionDao.getAllBids();
+    } 
             
     @Override
     public HashMap<Integer, RequirementNode> getAuctionHashMap(){

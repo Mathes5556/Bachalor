@@ -1,6 +1,11 @@
 package sk.adresa.eaukcia.core.dao.impl;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -25,6 +30,7 @@ import sk.adresa.eaukcia.core.query.PaginatedList;
 
 import org.json.*;
 import org.springframework.web.jsf.FacesContextUtils;
+import sk.adresa.eaukcia.core.data.BidForItem;
 import sk.adresa.eaukcia.core.data.Event;
 import sk.adresa.eaukcia.core.data.EventType;
 import sk.adresa.eaukcia.core.data.Offer;
@@ -59,18 +65,21 @@ public class AuctionDaoImpl extends AbstractDao implements AuctionDao {
     @Override
     public List<Event> getAllEvents(){
          List<Event> events = sqlSession.selectList(DEFAULT_PREFIX2 + "getAuctionLogs");
-         AuctionEvent e = (AuctionEvent) sqlSession.selectOne(DEFAULT_PREFIX2 + "getAuctionLog", 1);
+         //AuctionEvent e = (AuctionEvent) sqlSession.selectOne(DEFAULT_PREFIX2 + "getAuctionLog", 519);
+         //String[][] a = e.getJSONValues();
          return events;
     }
     
     @Override
     public List<RequirementNode> getAllRequirementForAuction(){
          List<RequirementNode> requirments = sqlSession.selectList(DEFAULT_PREFIX2 + "getRequirments");
+         //ArrayList<ArrayList<BidForItem>> a = getAllBids();
          return requirments;
     }
     
+    
     @Override
-    public PaginatedList<Auction> getFilteredAuctions(AuctionFilter filter, Paging paging) {
+    public ArrayList<HashMap<Integer,BidForItem>>  getAllBids() {
        /*
         FacesContext context = FacesContext.getCurrentInstance();
        Map<String,String> getParams = context.getExternalContext().getRequestParameterMap();
@@ -95,14 +104,11 @@ public class AuctionDaoImpl extends AbstractDao implements AuctionDao {
        
       
        */
-       /*
+       
        
        
         AuctionLogDaoImpl auctionLog = new AuctionLogDaoImpl();
         auctionLog.setSqlSession(sqlSession);
-        System.out.print("faak");
-        
-        
         ArrayList<AuctionEvent> JSONoffers = new ArrayList<AuctionEvent>();
         
         for (int i = 1; i < 520; i++) {
@@ -110,38 +116,28 @@ public class AuctionDaoImpl extends AbstractDao implements AuctionDao {
             if (auctionEvent == null) {
                 continue;
             }
-            if (!auctionEvent.getAction().equals(ADD_CRITERION)) {
-                System.out.println("------");
-                System.out.println("------");
-                System.out.println("------");
-                System.out.println("------");
-                
+            if (!auctionEvent.getAction().equals(ADD_CRITERION)) {   
                 System.out.println(auctionEvent.getValue());
                 JSONoffers.add(auctionEvent);
             }
             
         }
         
-        
-        
         Deque queue = new ArrayDeque();
-        /*
+        
         HashMap<Integer, RequirementNode> requirementNodes = new HashMap<Integer, RequirementNode>();
-        //TODO naplnenie z DB
-        
-        
-        AuctionEvent auctionEvent = auctionLog.getAuctionLog(400);
-        //.out.println("faak");
-        //System.out.print(auctionEvent.getValue());
-        String jsonAuction = auctionEvent.getValue();
-
-
-
-        //for(JSONObject jsonObj : jsons){ //one jsnObj is one offer
         
         ArrayList<Offer> offers = new ArrayList<Offer>();
+        ArrayList<HashMap<Integer,BidForItem>> allBids = new ArrayList<HashMap<Integer,BidForItem>>();
         
         for (AuctionEvent offer : JSONoffers) {
+            //dekodovat s GSONOM
+             //JsonElement jelement = new JsonParser().parse(jsonLine);
+             //JsonObject  jobject = jelement.getAsJsonObject();
+            
+            
+            HashMap<Integer,BidForItem> bidsInOneOffer = new  HashMap<Integer,BidForItem>();
+            //vzdy novy bid 
             if (offer == null) {
                 continue;
             }
@@ -152,15 +148,12 @@ public class AuctionDaoImpl extends AbstractDao implements AuctionDao {
             offers.add(off);
             try {
                 JSONObject jsonObj = new JSONObject(offer.getValue());
-                String auctionName = jsonObj.getString("nameInAuction");
+                //String auctionName = jsonObj.getString("nameInAuction");
                 JSONArray items = jsonObj.getJSONArray("items");
                 for (int i = 0; i < items.length(); i++) {
                     JSONObject node = items.getJSONObject(i);
                     queue.add(node);
-                    
-                }
-                //System.out.print("faak2");
-                //System.out.print(auctionName);                
+                }                
             } catch (JSONException ex) {
                 Logger.getLogger(AuctionDaoImpl.class.getName()).log(Level.SEVERE, null, ex);
                 continue;
@@ -168,7 +161,7 @@ public class AuctionDaoImpl extends AbstractDao implements AuctionDao {
             
             while (!queue.isEmpty()) { // while is there any items
                 Deque nodes = new ArrayDeque();
-                JSONObject item = (JSONObject) queue.pollFirst();
+                JSONObject item = (JSONObject) queue.pollFirst(); // vztiahnutie prveho z que
                 nodes.addFirst(item);
                 while (!nodes.isEmpty()) {
                     JSONObject node = (JSONObject) nodes.pollFirst();
@@ -187,8 +180,12 @@ public class AuctionDaoImpl extends AbstractDao implements AuctionDao {
                             int idNode = new Integer(id);
 
                             //RequirementNode product = requirementNodes.get(idNode);
-                            Event event = new Event(off, idNode, new BigDecimal(oldValue), new BigDecimal(newValue), EventType.MAKE_OFFER);
-                            off.addEvent(event);     
+                            //Event event = new Event(off, idNode, new BigDecimal(newValue), EventType.MAKE_OFFER);
+                            //off.addEvent(event);   
+                            
+                            System.out.print(offer.getTime());
+                            BidForItem bid = new BidForItem(idNode, null, offer.getTargetUserId(),new BigDecimal(newValue), offer.getTime());
+                            bidsInOneOffer.put(new Integer(idNode), bid);
                         } else { // NOT leaf
                             for (int i = 0; i < childrens.length(); i++) {
                                 JSONObject hierachicalNode = childrens.getJSONObject(i);
@@ -201,8 +198,15 @@ public class AuctionDaoImpl extends AbstractDao implements AuctionDao {
                     }
                 }
             }
-            
+            allBids.add(bidsInOneOffer);
         }
+        System.out.print("-----------");
+        
+        
+        
+     
+        return allBids;
+        /*
         BigDecimal tmp = BigDecimal.ZERO;
         for(Offer o : offers){
             System.out.print(o.getSumOfOffer());
@@ -212,12 +216,14 @@ public class AuctionDaoImpl extends AbstractDao implements AuctionDao {
             System.out.print("-----------");
             
         }       
-        */
+        
         int totalRows = (Integer) sqlSession.selectOne(DEFAULT_PREFIX + "countFilteredAuctions", filter);
         Paging pp = new Paging(paging.getRowsPerPage(), paging.getActualPage(), totalRows);
         RowBounds bounds = new RowBounds(pp.getOffset(), pp.getRowsPerPage());
         List auctions = sqlSession.selectList(DEFAULT_PREFIX + "getFilteredAuctions", filter, bounds);
         return new PaginatedList<Auction>(auctions, pp);
+        */
         
+       // return null;
     }
 }

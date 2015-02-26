@@ -4,21 +4,29 @@ import java.math.BigDecimal;
 import java.util.Date;
 
 /**
- *
+ * class from which is filled from myBatis
+ * 
  * @author mathes
  */
 public class Event implements Comparable<Event> {
      //TODO UNIT_TYPE,CODE
-    private Integer item_id;
+    protected Integer item_id;
         
-    private BigDecimal numeric_value;
+    protected BigDecimal numeric_value;
     
-    private int round;
+    protected int round;
     
-    private String fk_user;
+    protected String fk_user;
     
-    private Date last_modified;
+    protected Date last_modified;
     
+//    public Event(Integer item_id, BigDecimal numeric_value, String fk_user, Date last_modified) {
+//        this.item_id = item_id;
+//        this.numeric_value = numeric_value;
+//        this.fk_user = fk_user;
+//        this.last_modified = last_modified;
+//    }
+//    
     public Integer getItem_id() {
         return item_id;
     }
@@ -60,13 +68,17 @@ public class Event implements Comparable<Event> {
     }
    
     
-    
     /*
+    private int idProduct;
+    
     private RequirementNode product;
     
     private EventType type;
     
     private Offer offer;
+    
+    BigDecimal  value;
+    
     
      public Event( Offer offer, int idProduct, BigDecimal offeredValue, EventType type) {
         this.idProduct = idProduct;
@@ -115,6 +127,8 @@ public class Event implements Comparable<Event> {
     public void setOffer(Offer offer) {
         this.offer = offer;
     }
+    
+
     */
 
     @Override

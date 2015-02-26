@@ -2,8 +2,11 @@ package sk.adresa.eaukcia.core.dao;
 
 
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import sk.adresa.eaukcia.core.data.Auction;
+import sk.adresa.eaukcia.core.data.BidForItem;
 import sk.adresa.eaukcia.core.data.Event;
 import sk.adresa.eaukcia.core.data.RequirementNode;
 import sk.adresa.eaukcia.core.query.Paging;
@@ -15,7 +18,12 @@ import sk.adresa.eaukcia.core.query.PaginatedList;
 public interface AuctionDao {
    
     public Auction getAuction(int auctionId);
-    public PaginatedList<Auction> getFilteredAuctions(AuctionFilter filter, Paging paging);
+    
+    /**
+     *  all bids for all log from auction_log table
+     * @return 
+     */
+    public ArrayList<HashMap<Integer,BidForItem>> getAllBids();
     /**
      *  Get all offer events in auction
      * 

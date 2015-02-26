@@ -35,10 +35,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
+import sk.adresa.eaukcia.core.dao.impl.AuctionDaoImpl;
 import sk.adresa.eaukcia.core.dao.impl.AuctionLogDaoImpl;
 
 import sk.adresa.eaukcia.core.data.Auction;
 import sk.adresa.eaukcia.core.data.AuctionEvent;
+import sk.adresa.eaukcia.core.data.BidEvent;
+import sk.adresa.eaukcia.core.data.BidForItem;
 import sk.adresa.eaukcia.core.data.Event;
 import sk.adresa.eaukcia.core.data.RequirementNode;
 import sk.adresa.eaukcia.core.query.Paging;
@@ -80,6 +83,29 @@ public class AuctionBean {
         //AuctionLogDaoImpl log = new AuctionLogDaoImpl();
         //AuctionEvent event = log.getAuctionLog(55);
         this.productNodes = this.auctionService.getAuctionHashMap();
+        ArrayList<HashMap<Integer,BidForItem>>  allBids = this.auctionService.getBids();
+        
+        //doplnim requirment nody o bidy 
+        for (Map.Entry<Integer, RequirementNode> entry : productNodes.entrySet()) {
+            Integer id = entry.getKey();
+            RequirementNode requirementNode = entry.getValue();
+            for (HashMap<Integer,BidForItem> bidsInOneOffer: allBids){
+                if(bidsInOneOffer.get(id) == null){//v tomto bide nebol zlepseny dany requirementNode pouziem stary offer
+                    Event lastOfferEvent = requirementNode.getOfferEvents().get(requirementNode.getOfferEvents().size()-1);
+                    requirementNode.addOfferEvent(lastOfferEvent);
+                }
+                else{
+                     BidForItem bid = bidsInOneOffer.get(id);
+                     BidEvent newEvent = new BidEvent(bid.getItem_id(), bid.getNumeric_value(), bid.getFk_user(), bid.getTime());
+                     requirementNode.addOfferEvent(newEvent);
+                }
+            }
+        }
+
+        // ulozim zmeny v bidoch <integerBid, newValue>  -> arraylist of Event !!!!!
+        // prejdem cely productNodes ak jeho id(key) v key of bidov
+            //tak pridaj, inak nakopriuj(nemenilo sa)
+        
     }
     
     public void listener(AjaxBehaviorEvent event) {

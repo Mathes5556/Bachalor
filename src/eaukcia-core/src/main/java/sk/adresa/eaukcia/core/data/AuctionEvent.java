@@ -446,7 +446,12 @@ public class AuctionEvent implements Comparable{
             String[][] result = null;
             JSONObject jsonObj = (JSONObject)JSONSerializer.toJSON(value);
             JSONArray items = null;
-            if((Boolean)(jsonObj.get("listType")) == false){
+            Integer listType = (Integer) jsonObj.get("listType");
+            boolean isListType = false;
+            if(listType == 1){
+                isListType = true;
+            }
+            if(isListType == false){
                 result = new String[5][3];
             } else {
                 items = (JSONArray)jsonObj.get("items");
