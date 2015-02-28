@@ -111,12 +111,12 @@ public class AuctionDaoImpl extends AbstractDao implements AuctionDao {
         auctionLog.setSqlSession(sqlSession);
         ArrayList<AuctionEvent> JSONoffers = new ArrayList<AuctionEvent>();
         
-        for (int i = 1; i < 520; i++) {
+        for (int i = 1; i <= 631; i++) {
             AuctionEvent auctionEvent = auctionLog.getAuctionLog(i);
             if (auctionEvent == null) {
                 continue;
             }
-            if (!auctionEvent.getAction().equals(ADD_CRITERION)) {   
+            if (auctionEvent.getAction().equals("setCriterionsForUser")) {   
                 System.out.println(auctionEvent.getValue());
                 JSONoffers.add(auctionEvent);
             }
@@ -129,14 +129,97 @@ public class AuctionDaoImpl extends AbstractDao implements AuctionDao {
         
         ArrayList<Offer> offers = new ArrayList<Offer>();
         ArrayList<HashMap<Integer,BidForItem>> allBids = new ArrayList<HashMap<Integer,BidForItem>>();
+        //login of user is key
+        HashMap<String, User> usersParticipateInAction = new HashMap<String, User>();
         
         for (AuctionEvent offer : JSONoffers) {
-            //dekodovat s GSONOM
-             //JsonElement jelement = new JsonParser().parse(jsonLine);
-             //JsonObject  jobject = jelement.getAsJsonObject();
+            if(!usersParticipateInAction.containsKey(offer.getUser().getLogin())){
+                usersParticipateInAction.put(offer.getUser().getLogin(), offer.getUser());
+            }
+           
             
-            
+            if(offer.getUser().getLogin().equals("admin")){
+                continue;
+            }
             HashMap<Integer,BidForItem> bidsInOneOffer = new  HashMap<Integer,BidForItem>();
+            System.out.print("===");
+          
+            try{
+            //dekodovat s GSONOM
+            JsonElement jelement = new JsonParser().parse(offer.getValue());
+            JsonObject  jobject = jelement.getAsJsonObject();
+            JsonArray jarray = jobject.getAsJsonArray("items");
+            Object typeOfAction = jobject.get("nameInAuction");
+            if (typeOfAction != null &&  typeOfAction.toString().equals("Záruka")){
+                continue;
+            }
+            
+            for(JsonElement i : jarray){
+                
+                JsonObject  obj = i.getAsJsonObject();
+                JsonArray childrens = obj.getAsJsonArray("children");
+                String price = obj.get("integerValue").toString();
+                String itemID = obj.get("itemId").toString();
+                BidForItem bid = new BidForItem(new Integer(itemID), null, offer.getTargetUserId(),new BigDecimal(price), offer.getTime(), offer.getUser());
+                bidsInOneOffer.put(new Integer(itemID), bid);
+                System.out.print(price + " => " + itemID );
+                for(JsonElement children : childrens){
+                    obj = children.getAsJsonObject();
+                    JsonArray childrens2 = obj.getAsJsonArray("children");
+                    price = obj.get("integerValue").toString();
+                    itemID = obj.get("itemId").toString();
+                    bid = new BidForItem(new Integer(itemID), null, offer.getTargetUserId(),new BigDecimal(price), offer.getTime(), offer.getUser());
+                    bidsInOneOffer.put(new Integer(itemID), bid);
+                    //BidForItem bid = new BidForItem(new Integer(itemID), null, offer.getTargetUserId(),new BigDecimal(price), offer.getTime());
+                    System.out.print(price + " => " + itemID );
+                    for(JsonElement child : childrens2){
+                        obj = child.getAsJsonObject();
+                        JsonArray childrens3 = obj.getAsJsonArray("children");
+                        if (childrens.size() != 0) {
+                             System.out.print("doplnit uroven");
+                        }
+                        price = obj.get("integerValue").toString();
+                        itemID = obj.get("itemId").toString();
+                        bid = new BidForItem(new Integer(itemID), null, offer.getTargetUserId(),new BigDecimal(price), offer.getTime(), offer.getUser());
+                        bidsInOneOffer.put(new Integer(itemID), bid);
+                        //BidForItem bid = new BidForItem(new Integer(itemID), null, offer.getTargetUserId(),new BigDecimal(price), offer.getTime());
+                        System.out.print(price + " => " + itemID );
+                        
+                        
+                         for(JsonElement childr : childrens3){
+                            obj = childr.getAsJsonObject();
+                            JsonArray childrens4 = obj.getAsJsonArray("children");
+                            if (childrens4.size() != 0) {
+                                 System.out.print("doplnit uroven");
+                            }
+                            price = obj.get("integerValue").toString();
+                            itemID = obj.get("itemId").toString();
+                            bid = new BidForItem(new Integer(itemID), null, offer.getTargetUserId(),new BigDecimal(price), offer.getTime(), offer.getUser());
+                            bidsInOneOffer.put(new Integer(itemID), bid);
+                            //BidForItem bid = new BidForItem(new Integer(itemID), null, offer.getTargetUserId(),new BigDecimal(price), offer.getTime());
+                            System.out.print(price + " => " + itemID );
+
+                        }
+                    }
+                }
+                System.out.print("==+++++++++++++++++++++++++++++=");
+            }
+            }
+            catch(Exception e){
+                
+                continue;
+            }
+            finally{
+                allBids.add(bidsInOneOffer);
+            }
+            continue;
+
+            
+            
+            
+            
+            
+            
             //vzdy novy bid 
             if (offer == null) {
                 continue;
@@ -183,8 +266,8 @@ public class AuctionDaoImpl extends AbstractDao implements AuctionDao {
                             //Event event = new Event(off, idNode, new BigDecimal(newValue), EventType.MAKE_OFFER);
                             //off.addEvent(event);   
                             
-                            System.out.print(offer.getTime());
-                            BidForItem bid = new BidForItem(idNode, null, offer.getTargetUserId(),new BigDecimal(newValue), offer.getTime());
+                            //System.out.print(offer.getTime());
+                            BidForItem bid = new BidForItem(idNode, null, offer.getTargetUserId(),new BigDecimal(newValue), offer.getTime(), null);
                             bidsInOneOffer.put(new Integer(idNode), bid);
                         } else { // NOT leaf
                             for (int i = 0; i < childrens.length(); i++) {
@@ -198,7 +281,7 @@ public class AuctionDaoImpl extends AbstractDao implements AuctionDao {
                     }
                 }
             }
-            allBids.add(bidsInOneOffer);
+            
         }
         System.out.print("-----------");
         
