@@ -35,6 +35,7 @@
             //making data for main chart
            
             var idsToShow =  #{auctionBean.ids};
+            var selectedUsers = #{auctionBean.selectedUsersJSON};
             var pole = #{auctionBean.historyOfOfferForNodes};
             var nameOfNodes =#{auctionBean.JSNameOfNode}; 
             dataToChart = [];
@@ -258,12 +259,19 @@
                         html:"<button type='button' class='btn btn-default'>" + name +  "</button>\
                               <button class='deleteFilter btn btn-danger' type='button'>-</button>"
                     }).appendTo('#selectedProducts');
-                    //$( "#selectedProducts" ).append( "<div class='deleteFilter' id="+ id+ ">"+ name + "</div><br>" );
-                    //alert(el.value);
-                    //alert(el.options[el.selectedIndex].innerHTML)
-                  
                 };
                 
+                addUser = function(el){
+                     var userName = el.value;
+                     selectedUsers.push(userName);
+                     alert(userName);
+                     jQuery('<div/>', {
+                        id: userName,
+                        text: userName,
+                        html:"<button type='button' class='btn btn-default'>" + userName +  "</button>\
+                              <button class='deleteFilter btn btn-danger' type='button'>-</button>"
+                    }).appendTo('#selectedUsers');
+                }
                 
                 var datesOfOffers = #{auctionBean.offersDate};
                 $('#container').highcharts({
@@ -360,9 +368,32 @@
                     <h:selectOneMenu value="products" onchange="addProduct(this)">
                         <f:selectItems value="#{auctionBean.allProducts}" var="node"
                         itemValue="#{node.item_id}" itemLabel="#{node.name}"/>
-                        
                     </h:selectOneMenu>
                 </h:form>
+                
+                <h:form>
+                    <h:selectOneMenu value="users" onchange="addUser(this)" >
+                        <f:selectItems value="#{auctionBean.allUsers}" var="user"
+                        itemValue="#{user}" itemLabel="#{user}"/>
+                    </h:selectOneMenu>
+                </h:form>
+                Users:
+                     
+                <br></br>
+                <br></br>
+                
+                <h:panelGroup id="selectedUsers">
+                        <ui:repeat var="user" value="#{auctionBean.selectedUsers}">
+                            <div id="#{user}">
+                              <button type='button' class='btn btn-default'> #{user}</button>
+                              <button class='deleteUser btn btn-danger' type='button'>-</button>
+                            </div> 
+                        </ui:repeat>
+                </h:panelGroup>
+                
+                products
+                     
+                <br></br>
                 <br></br>
                 
                 <h:panelGroup id="selectedProducts">
@@ -373,6 +404,7 @@
                             </div> 
                         </ui:repeat>
                 </h:panelGroup>
+        
                 
                 <button id="showNewPage" type="button" class="btn btn-success">Show</button>
             </div>

@@ -13,6 +13,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javassist.bytecode.analysis.Util;
 import javax.annotation.PostConstruct;
 
@@ -44,6 +45,7 @@ import sk.adresa.eaukcia.core.data.BidEvent;
 import sk.adresa.eaukcia.core.data.BidForItem;
 import sk.adresa.eaukcia.core.data.Event;
 import sk.adresa.eaukcia.core.data.RequirementNode;
+import sk.adresa.eaukcia.core.data.User;
 import sk.adresa.eaukcia.core.query.Paging;
 import sk.adresa.eaukcia.core.data.filter.AuctionFilter;
 import sk.adresa.eaukcia.core.query.PaginatedList;
@@ -76,7 +78,10 @@ public class AuctionBean {
     static Logger logger = Logger.getLogger(AuctionBean.class);
     private AuctionLogBean auctionLogBean;
     private UIDataTable table;
+    //vsetko nizsie bude v objekte Auction ktory budem serializovat 
     private HashMap<Integer, RequirementNode> productNodes; 
+    private HashMap<String, User> users = new HashMap<String, User>();
+             
     
     @PostConstruct
     public void initBean(){
@@ -84,14 +89,28 @@ public class AuctionBean {
         //AuctionEvent event = log.getAuctionLog(55);
         this.productNodes = this.auctionService.getAuctionHashMap();
         ArrayList<HashMap<Integer,BidForItem>>  allBids = this.auctionService.getBids();
+        this.users = this.auctionService.getUsers();
         
         //doplnim requirment nody o bidy 
         for (Map.Entry<Integer, RequirementNode> entry : productNodes.entrySet()) {
             Integer id = entry.getKey();
             RequirementNode requirementNode = entry.getValue();
-            for (HashMap<Integer,BidForItem> bidsInOneOffer: allBids){
+            
+            for (HashMap<Integer,BidForItem> bidsInOneOffer : allBids){
+                if(bidsInOneOffer.size() == 0 ){
+                    continue;
+                }
+                
                 if(bidsInOneOffer.get(id) == null){//v tomto bide nebol zlepseny dany requirementNode pouziem stary offer
+                    //TODO vyriesit/ocekovat prvy bid
+                    // TODO dojdem sem vobec niekedy ?
                     Event lastOfferEvent = requirementNode.getOfferEvents().get(requirementNode.getOfferEvents().size()-1);
+                    //root je vzdy dany 
+                    BidForItem rootBid = bidsInOneOffer.get(new Integer(0));
+                    if(rootBid != null){
+                        String byUser = rootBid.getFk_user();
+                        lastOfferEvent.setFk_user(byUser);
+                    }
                     requirementNode.addOfferEvent(lastOfferEvent);
                 }
                 else{
@@ -119,11 +138,35 @@ public class AuctionBean {
     
     final public static String ID = "id";
     
+    final public static String USERS = "users";
+    
+    final public static String ALL_USERS = "all_users";
+    
+    
     private String getParamValue(String value){
         FacesContext context = FacesContext.getCurrentInstance();
         Map<String,String> getParams = context.getExternalContext().getRequestParameterMap();
         return getParams.get(value);
     }
+    
+    public JSONArray getSelectedUsersJSON(){
+        return new JSONArray(this.getSelectedUsers());    
+    }
+    
+    public ArrayList<String> getSelectedUsers(){
+        ArrayList<String> result = new ArrayList<String> ();
+        String value =  this.getParamValue(USERS);
+        if(value == null){ //ak nebol ziadnny seleknuty tak vsetci
+            result.add(ALL_USERS);
+            return result;
+        }
+        String[] users = value.split(",");
+        for (int i = 0; i < users.length; i++) {
+            result.add(users[i]);
+        }
+        return result;
+    }
+    
     public ArrayList<Integer> getIds(){
         ArrayList<Integer> result = new ArrayList<Integer> ();
         String value =  this.getParamValue(ID);
@@ -363,13 +406,12 @@ public class AuctionBean {
     }
     
     public Collection<RequirementNode> getAllProducts(){
-        Collection<RequirementNode>  result = this.productNodes.values() ;
-        return result;
-        //ArrayList<String> result = new ArrayList<String>();
-        //for(RequirementNode node : this.productNodes.values()){
-        //    result.add(node.getName());
-        //}
-        //return result;   
+        Collection<RequirementNode>  result = this.productNodes.values();
+        return result; 
+    }
+    
+    public Set<String> getAllUsers(){
+        return this.users.keySet(); 
     }
     
     private String toJavascriptArray(ArrayList<String> arrL){

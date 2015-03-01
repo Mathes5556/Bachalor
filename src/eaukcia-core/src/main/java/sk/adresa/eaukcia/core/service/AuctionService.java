@@ -9,6 +9,7 @@ import java.util.HashMap;
 import sk.adresa.eaukcia.core.data.Auction;
 import sk.adresa.eaukcia.core.data.BidForItem;
 import sk.adresa.eaukcia.core.data.RequirementNode;
+import sk.adresa.eaukcia.core.data.User;
 import sk.adresa.eaukcia.core.data.filter.AuctionFilter;
 import sk.adresa.eaukcia.core.exception.EaukciaObjectNotFoundException;
 import sk.adresa.eaukcia.core.query.PaginatedList;
@@ -43,7 +44,17 @@ public interface AuctionService {
      */
     public HashMap<Integer, RequirementNode> getAuctionHashMap();
     
+    /**
+     * get all bids for auction fom DB
+     * @return 
+     */
     public ArrayList<HashMap<Integer,BidForItem>>  getBids();
+    
+    /**
+     * get hashmap of users this method can be call after caling getBids !!!
+     * @return 
+     */
+    public HashMap<String, User> getUsers();
     
 }
 

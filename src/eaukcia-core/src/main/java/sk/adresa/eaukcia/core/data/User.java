@@ -10,6 +10,8 @@ public class User implements LoggableObject {
     private String login;
     private String role;
     private String name, surname;
+    private Integer id;
+
 
     public User() {
     }
@@ -77,7 +79,13 @@ public class User implements LoggableObject {
         return name;
     }
     
-    
+     public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
     
     
 }

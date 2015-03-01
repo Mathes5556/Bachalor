@@ -40,10 +40,15 @@ import sk.adresa.eaukcia.core.service.impl.AuctionServiceImpl;
 import sk.adresa.eaukcia.core.util.Util;
 
 public class AuctionDaoImpl extends AbstractDao implements AuctionDao {
-    
     private static final String DEFAULT_PREFIX = "sk.adresa.eaukcia.core.dao.impl.AuctionMapper.";
     private static final String DEFAULT_PREFIX2 = "sk.adresa.eaukcia.core.dao.impl.AuctionLogMapper.";
     
+    HashMap<String, User> usersParticipateInAction = new HashMap<String, User>();
+
+    public HashMap<String, User> getUsersParticipateInAction() {
+        return usersParticipateInAction;
+    }
+
     public AuctionDaoImpl() {
     }
     
@@ -80,33 +85,6 @@ public class AuctionDaoImpl extends AbstractDao implements AuctionDao {
     
     @Override
     public ArrayList<HashMap<Integer,BidForItem>>  getAllBids() {
-       /*
-        FacesContext context = FacesContext.getCurrentInstance();
-       Map<String,String> getParams = context.getExternalContext().getRequestParameterMap();
-       
-       List<Event> events = sqlSession.selectList(DEFAULT_PREFIX2 + "getAuctionLogs");
-       HashMap<Integer, ArrayList<Event>> nodeEvents = AuctionServiceImpl.offersEventToMap(events);
-       
-       //dam events do offerov
-       
-       
-       List<RequirementNode> requirments = sqlSession.selectList(DEFAULT_PREFIX2 + "getRequirments");
-       HashMap<Integer, RequirementNode> nodes = AuctionServiceImpl.getRequirementHashpMap(requirments);
-       AuctionServiceImpl.makeDependency(nodes);
-       
-       //add eventOffers to appropiate products
-        //priradim pre kazdy node vseky ponuky
-       for (Integer key : nodeEvents.keySet()) {
-            ArrayList<Event> offerEvents = nodeEvents.get(key);
-            RequirementNode node = nodes.get(key);
-            node.setOfferEvents(offerEvents);
-       }
-       
-      
-       */
-       
-       
-       
         AuctionLogDaoImpl auctionLog = new AuctionLogDaoImpl();
         auctionLog.setSqlSession(sqlSession);
         ArrayList<AuctionEvent> JSONoffers = new ArrayList<AuctionEvent>();
@@ -130,14 +108,13 @@ public class AuctionDaoImpl extends AbstractDao implements AuctionDao {
         ArrayList<Offer> offers = new ArrayList<Offer>();
         ArrayList<HashMap<Integer,BidForItem>> allBids = new ArrayList<HashMap<Integer,BidForItem>>();
         //login of user is key
-        HashMap<String, User> usersParticipateInAction = new HashMap<String, User>();
+        
         
         for (AuctionEvent offer : JSONoffers) {
-            if(!usersParticipateInAction.containsKey(offer.getUser().getLogin())){
-                usersParticipateInAction.put(offer.getUser().getLogin(), offer.getUser());
+            if(!this.usersParticipateInAction.containsKey(offer.getUser().getLogin())){
+                this.usersParticipateInAction.put(offer.getTargetUserId(), offer.getUser());
             }
            
-            
             if(offer.getUser().getLogin().equals("admin")){
                 continue;
             }
@@ -205,89 +182,18 @@ public class AuctionDaoImpl extends AbstractDao implements AuctionDao {
                 System.out.print("==+++++++++++++++++++++++++++++=");
             }
             }
-            catch(Exception e){
-                
+            catch(Exception e){   
                 continue;
             }
             finally{
                 allBids.add(bidsInOneOffer);
             }
-            continue;
-
-            
-            
-            
-            
-            
-            
-            //vzdy novy bid 
-            if (offer == null) {
-                continue;
-            }
-            if(offer.getValue() == null){
-                continue;
-            }
-            Offer off = new Offer(offer.getId(), offer.getUser(), offer.getTime());
-            offers.add(off);
-            try {
-                JSONObject jsonObj = new JSONObject(offer.getValue());
-                //String auctionName = jsonObj.getString("nameInAuction");
-                JSONArray items = jsonObj.getJSONArray("items");
-                for (int i = 0; i < items.length(); i++) {
-                    JSONObject node = items.getJSONObject(i);
-                    queue.add(node);
-                }                
-            } catch (JSONException ex) {
-                Logger.getLogger(AuctionDaoImpl.class.getName()).log(Level.SEVERE, null, ex);
-                continue;
-            }
-            
-            while (!queue.isEmpty()) { // while is there any items
-                Deque nodes = new ArrayDeque();
-                JSONObject item = (JSONObject) queue.pollFirst(); // vztiahnutie prveho z que
-                nodes.addFirst(item);
-                while (!nodes.isEmpty()) {
-                    JSONObject node = (JSONObject) nodes.pollFirst();
-                    try {
-                        JSONArray childrens = node.getJSONArray("children");
-                        if (childrens.length() == 0) {  // is  leaf 
-                            String id = node.getString(ID_ITEM);
-                            String name = node.getString(NAME);
-                            String amount = node.getString(AMOUNT);                            
-                            String newValue = node.getString(NEW_VALUE);
-                            String oldValue = node.getString(OLD_VALUE);
-                            String parentId = node.getString(PARENT_ITEM_ID);
-                            String unitType = node.getString(UNIT_TYPE);
-                            String codeItem = node.getString(CODE);
-                            
-                            int idNode = new Integer(id);
-
-                            //RequirementNode product = requirementNodes.get(idNode);
-                            //Event event = new Event(off, idNode, new BigDecimal(newValue), EventType.MAKE_OFFER);
-                            //off.addEvent(event);   
-                            
-                            //System.out.print(offer.getTime());
-                            BidForItem bid = new BidForItem(idNode, null, offer.getTargetUserId(),new BigDecimal(newValue), offer.getTime(), null);
-                            bidsInOneOffer.put(new Integer(idNode), bid);
-                        } else { // NOT leaf
-                            for (int i = 0; i < childrens.length(); i++) {
-                                JSONObject hierachicalNode = childrens.getJSONObject(i);
-                                // davat do nodu nie que
-                                nodes.add(hierachicalNode);
-                            }
-                        }
-                    } catch (JSONException ex) {
-                        Logger.getLogger(AuctionDaoImpl.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                }
-            }
-            
         }
         System.out.print("-----------");
         
         
         
-     
+        
         return allBids;
         /*
         BigDecimal tmp = BigDecimal.ZERO;

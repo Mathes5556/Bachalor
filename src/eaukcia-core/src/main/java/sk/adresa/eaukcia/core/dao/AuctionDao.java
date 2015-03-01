@@ -9,6 +9,7 @@ import sk.adresa.eaukcia.core.data.Auction;
 import sk.adresa.eaukcia.core.data.BidForItem;
 import sk.adresa.eaukcia.core.data.Event;
 import sk.adresa.eaukcia.core.data.RequirementNode;
+import sk.adresa.eaukcia.core.data.User;
 import sk.adresa.eaukcia.core.query.Paging;
 import sk.adresa.eaukcia.core.data.filter.AuctionFilter;
 
@@ -37,4 +38,6 @@ public interface AuctionDao {
      * @return 
      */
     public List<RequirementNode> getAllRequirementForAuction();
+    
+    public HashMap<String, User> getUsersParticipateInAction();
 }

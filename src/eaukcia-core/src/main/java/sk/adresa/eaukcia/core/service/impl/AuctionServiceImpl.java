@@ -15,6 +15,7 @@ import sk.adresa.eaukcia.core.data.Auction;
 import sk.adresa.eaukcia.core.data.BidForItem;
 import sk.adresa.eaukcia.core.data.Event;
 import sk.adresa.eaukcia.core.data.RequirementNode;
+import sk.adresa.eaukcia.core.data.User;
 import sk.adresa.eaukcia.core.data.filter.AuctionFilter;
 import sk.adresa.eaukcia.core.query.PaginatedList;
 import sk.adresa.eaukcia.core.query.Paging;
@@ -52,6 +53,12 @@ public class AuctionServiceImpl extends AbstractDao implements AuctionService {
     public ArrayList<HashMap<Integer,BidForItem>>  getBids(){
         return this.auctionDao.getAllBids();
     } 
+    
+    
+    @Override
+    public HashMap<String, User> getUsers(){
+       return this.auctionDao.getUsersParticipateInAction();
+    }
             
     @Override
     public HashMap<Integer, RequirementNode> getAuctionHashMap(){
