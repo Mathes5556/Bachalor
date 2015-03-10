@@ -35,14 +35,14 @@
             //making data for main chart
            
             var idsToShow =  #{auctionBean.ids};
-            var selectedUsers = #{auctionBean.selectedUsersJSON};
             var pole = #{auctionBean.historyOfOfferForNodes};
             var nameOfNodes =#{auctionBean.JSNameOfNode}; 
+            var selectedUsers = #{auctionBean.selectedUsersJSON};
             dataToChart = [];
             for(var i=0;i < pole.length; i++){
                 var line = {};
                 line.data = pole[i];
-                line.name = nameOfNodes[i];
+                line.name = selectedUsers[i];
                 dataToChart.push(line);
             }
             
@@ -225,7 +225,16 @@
 
                      $( this ).parent().hide();
                 });
-            
+                
+                $(document).on('click', ".deleteUser"  , function() {
+                     var name = $(this).parent().attr('id');
+                     alert(name);
+                     var index = selectedUsers.indexOf(name);
+                     selectedUsers.splice(index, 1);
+
+                     $( this ).parent().hide();
+                });
+                
                 var redirect = function(url){
                      window.location.replace(url);
                 };
@@ -238,6 +247,15 @@
                         result = result + id;
                         if(i+1 < idsToShow.length){
                             result = result + ",";
+                        }
+                    }
+                    var USERS_PREFIX = "&users=";
+                    result += USERS_PREFIX;
+                    for(var i = 0; i < selectedUsers.length;i++){
+                        name = selectedUsers[i];
+                        result += name;
+                        if(i+1 < selectedUsers.length){
+                            result +=",";
                         }
                     }
                     return result;
@@ -269,7 +287,7 @@
                         id: userName,
                         text: userName,
                         html:"<button type='button' class='btn btn-default'>" + userName +  "</button>\
-                              <button class='deleteFilter btn btn-danger' type='button'>-</button>"
+                              <button class='deleteUser btn btn-danger' type='button'>-</button>"
                     }).appendTo('#selectedUsers');
                 }
                 
@@ -286,11 +304,18 @@
                     },
                     xAxis: {
                           
-                        categories: datesOfOffers
+                           type: 'datetime',
+                            dateTimeLabelFormats: { // don't display the dummy year
+                                month: '%e. %b',
+                                year: '%b'
+                            },
+                            title: {
+                                text: 'Date'
+                            }
                     },
                     yAxis: {
                         title: {
-                            text: 'Temperature'
+                            text: 'Prize'
                         },
                         labels: {
                             formatter: function () {
@@ -408,7 +433,7 @@
                 
                 <button id="showNewPage" type="button" class="btn btn-success">Show</button>
             </div>
-            <div id="container" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+            <div id="container" style="min-width: 310px; height: 600px; margin: 0 auto"></div>
             
             
              <ui:repeat var="item" value="#{auctionBean.ids}">

@@ -2,6 +2,11 @@ package sk.adresa.eaukcia.frontend.beans;
 
 
 import com.google.gson.Gson;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.text.Format;
@@ -32,12 +37,15 @@ import org.json.JSONObject;
 import org.richfaces.component.UIDataTable;
 import org.richfaces.component.html.HtmlDataTable;
 import org.richfaces.json.JSONArray;
+import org.richfaces.util.CollectionsUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
+import org.springframework.util.SerializationUtils;
 import sk.adresa.eaukcia.core.dao.impl.AuctionDaoImpl;
 import sk.adresa.eaukcia.core.dao.impl.AuctionLogDaoImpl;
+import sk.adresa.eaukcia.core.data.AuctionData;
 
 import sk.adresa.eaukcia.core.data.Auction;
 import sk.adresa.eaukcia.core.data.AuctionEvent;
@@ -50,18 +58,11 @@ import sk.adresa.eaukcia.core.query.Paging;
 import sk.adresa.eaukcia.core.data.filter.AuctionFilter;
 import sk.adresa.eaukcia.core.query.PaginatedList;
 import sk.adresa.eaukcia.core.service.AuctionService;
+import sk.adresa.eaukcia.core.service.impl.AllAuctionData;
 import sk.adresa.eaukcia.frontend.uidata.UiAuction;
 
 @Component
 public class AuctionBean {
-    
-    //@Autowired
-    //@Qualifier("sessionFactory")
-    //private SessionFactory sessionFactory;
-    
-     
-    //@Autowired
-   // private ApplicationContext appContext;
     String addedId;
 
     public String getAddedId() {
@@ -74,22 +75,30 @@ public class AuctionBean {
     private Auction auction = new Auction();
     private int scrollerPage;
     private List<UiAuction> uiAuctions;
+    
     private AuctionService auctionService;
+    
+    private AllAuctionData allAuctionData;
+
     static Logger logger = Logger.getLogger(AuctionBean.class);
     private AuctionLogBean auctionLogBean;
     private UIDataTable table;
+    
     //vsetko nizsie bude v objekte Auction ktory budem serializovat 
     private HashMap<Integer, RequirementNode> productNodes; 
     private HashMap<String, User> users = new HashMap<String, User>();
-             
+    private HashMap<String, RequirementNode> productsCodeMap = new HashMap<String, RequirementNode>(); 
+    
+    private ArrayList<AuctionData> auctions = new ArrayList<AuctionData>();
     
     @PostConstruct
-    public void initBean(){
+    public void initBean() throws IOException{
         //AuctionLogDaoImpl log = new AuctionLogDaoImpl();
         //AuctionEvent event = log.getAuctionLog(55);
         this.productNodes = this.auctionService.getAuctionHashMap();
         ArrayList<HashMap<Integer,BidForItem>>  allBids = this.auctionService.getBids();
         this.users = this.auctionService.getUsers();
+        this.auctions = this.allAuctionData.getAuctions();
         
         //doplnim requirment nody o bidy 
         for (Map.Entry<Integer, RequirementNode> entry : productNodes.entrySet()) {
@@ -120,11 +129,86 @@ public class AuctionBean {
                 }
             }
         }
-
-        // ulozim zmeny v bidoch <integerBid, newValue>  -> arraylist of Event !!!!!
-        // prejdem cely productNodes ak jeho id(key) v key of bidov
-            //tak pridaj, inak nakopriuj(nemenilo sa)
         
+        //make hashmap where code of product is key
+        
+        for (Map.Entry<Integer, RequirementNode> entry : productNodes.entrySet()) {
+            RequirementNode requirementNode = entry.getValue();
+            if(requirementNode != null && requirementNode.getCode() != null){
+                productsCodeMap.put(requirementNode.getCode().trim(), requirementNode);
+            }    
+        }
+        
+        
+        
+        
+       ArrayList<File>  filesToSerialize = this.getAllSerializeFiles();
+       this.auctions = loadAuctionDatas(filesToSerialize);
+       // this.loadAllAuctions2();
+        this.importBackUp();
+    }
+    
+    private void saveAuctionObject(String name, HashMap<String,RequirementNode> productsCodeMap){
+        // save to whole Auction Object
+        AuctionData wholeAuctionData = new AuctionData(name, this.productNodes, this.users, productsCodeMap);
+        try {
+            wholeAuctionData.writeObject();
+        } catch (Exception e) {
+            e.printStackTrace(System.out);
+            System.out.print("Cant save serialization");
+        }
+    }
+    
+    private ArrayList<File> getAllSerializeFiles(){
+        ArrayList<File> result = new ArrayList<File>();
+        String dir = System.getProperty("user.dir");
+        File folder = new File(dir);
+        File[] listOfFiles = folder.listFiles();
+        for (File file : listOfFiles) {
+            if (file.isFile()) {
+                if(file.getName().contains(".ser")){
+                    result.add(file);
+                }  
+            }
+        }
+        return result;
+    }
+    
+    private ArrayList<AuctionData> loadAuctionDatas(ArrayList<File> filesToSerialize){
+        ArrayList<AuctionData> result = new ArrayList<AuctionData>();
+        for(File file: filesToSerialize){
+             AuctionData auctionData = AuctionData.getAuctionData(file.getName());
+             if(auctionData != null){
+                 result.add(auctionData);
+             }
+        }
+        return result;
+    }
+    
+    public void importBackUp() throws IOException{
+        Runtime r = Runtime.getRuntime();
+        Process p;
+        ProcessBuilder pb;
+        r = Runtime.getRuntime();
+        pb = new ProcessBuilder( 
+            "/usr/lib/postgresql/9.1/bin/pg_restore",
+            "--host", "localhost",
+            "--port", "5432",
+            "--username", "postgres",
+            "--dbname", "prosale",
+            "--role", "postgres",
+            "--no-password",
+            "--verbose",
+           "/home/mathes/Downloads/eaukcia_sp.backup");
+        pb.redirectErrorStream(true);
+        p = pb.start();
+        InputStream is = p.getInputStream();
+        InputStreamReader isr = new InputStreamReader(is);
+        BufferedReader br = new BufferedReader(isr);
+        String ll;
+        while ((ll = br.readLine()) != null) {
+         System.out.println(ll);
+        }   
     }
     
     public void listener(AjaxBehaviorEvent event) {
@@ -142,11 +226,32 @@ public class AuctionBean {
     
     final public static String ALL_USERS = "all_users";
     
+    final public static String AUCTIONS = "auctions";
+    
+    final public static String SELECTED_ITEM_CODE = "code";
+    
     
     private String getParamValue(String value){
         FacesContext context = FacesContext.getCurrentInstance();
         Map<String,String> getParams = context.getExternalContext().getRequestParameterMap();
         return getParams.get(value);
+    }
+    
+    public String getSelectedCode(){
+        return  this.getParamValue(SELECTED_ITEM_CODE);
+    }
+    
+    public ArrayList<String> getSelectedAuctions(){
+        ArrayList<String> result = new ArrayList<String> ();
+        String value =  this.getParamValue(AUCTIONS);
+        if(value == null){ //if no auction was selected
+            return result;
+        }
+        String[] auctions = value.split(",");
+        for (int i = 0; i < auctions.length; i++) {
+            result.add(auctions[i]);
+        }
+        return result;
     }
     
     public JSONArray getSelectedUsersJSON(){
@@ -156,7 +261,7 @@ public class AuctionBean {
     public ArrayList<String> getSelectedUsers(){
         ArrayList<String> result = new ArrayList<String> ();
         String value =  this.getParamValue(USERS);
-        if(value == null){ //ak nebol ziadnny seleknuty tak vsetci
+        if(value == null){ //if no user was selected
             result.add(ALL_USERS);
             return result;
         }
@@ -359,22 +464,118 @@ public class AuctionBean {
         return results;
     }
     
+    public static final String ALL_AUCTIONS = "all_auctions";
+    
+    public boolean isSelectedAllAuctions(ArrayList<String> selectedAuctions){
+        return selectedAuctions.size() == 1 && selectedAuctions.get(0).equals(ALL_AUCTIONS);
+    }
+    
     public JSONArray  getHistoryOfOfferForNodes(){
+       // kazdy JSONArray jedna krivka 
         List<JSONArray> results = new ArrayList<JSONArray>();
-        ArrayList<Integer> ids =  this.getIds(); 
-        for(Integer id : ids){
-            List<Event> events = this.productNodes.get(new Integer(id)).getOfferEvents();
-            List<Double> offers = new ArrayList<Double>();
-            if(id == null){
-                id = new Integer(0); // Default TOTAl value -> id = 0
+        ArrayList<String> selectedUsers = this.getSelectedUsers();        
+        ArrayList<Integer> ids =  this.getIds(); //selected id by  
+        ArrayList<String> selectedAuctions = this.getSelectedAuctions();
+        boolean allAuctions = isSelectedAllAuctions(selectedAuctions);
+        
+        if(selectedAuctions.size() > 1 || allAuctions){ // there is more then one auctions selected by user
+            String selectedCode = this.getSelectedCode(); 
+            if(selectedCode == null){
+                return null;
             }
-            for(Event event : events){
-                offers.add(event.getNumeric_value().doubleValue());
+            ArrayList<RequirementNode> nodesForCode = new ArrayList<RequirementNode>(); 
+            //find right node
+            for(AuctionData auction : this.auctions){
+                RequirementNode node = auction.getProductsCodeMap().get(selectedCode);
+                if(node != null){
+                    continue;
+                }
             }
-  
-            JSONArray jsonAraay = new JSONArray(offers);
-            results.add(jsonAraay);
+            //get selected auction
+            ArrayList<AuctionData> selectedAuctionObjects = new ArrayList<AuctionData>();
+            if(allAuctions){
+               selectedAuctionObjects = this.auctions; 
+            }
+            else{
+                for(String auctionName : selectedAuctions){
+                    for(AuctionData auctionObject : this.auctions){
+                        if(auctionObject.getName().equals(auctionName)){
+                            selectedAuctionObjects.add(auctionObject);
+                        }
+                    }
+                }
+            }
+            // find curve for all node in all auctions
+            for(AuctionData auctionObject : selectedAuctionObjects){
+                RequirementNode node = auctionObject.getProductsCodeMap().get(selectedCode);
+                if(node == null) {
+                    continue;
+                }
+                ArrayList<Event> events = node.getOfferEvents();
+                List<JSONArray> offers = new ArrayList<JSONArray>();
+                //we add events without time!
+                for(Event event : events){
+                    ArrayList<Double> point = new ArrayList<Double>();
+                    Double value = event.getNumeric_value().doubleValue();
+                    point.add(value);
+                    JSONArray pointJS = new JSONArray(point);
+                    offers.add(pointJS);
+                }
+                JSONArray jsonAraay = new JSONArray(offers);
+                results.add(jsonAraay); // jedna krivka
+            }
         }
+        else{ // only one auction
+            for(Integer id : ids){
+                if(selectedUsers.contains(ALL_USERS)){  // if all_users also prdocuct vs product only
+                     List<Event> events = this.productNodes.get(new Integer(id)).getOfferEvents();
+                     List<JSONArray> offers = new ArrayList<JSONArray>();
+                    if(id == null){
+                        id = new Integer(0); // Default TOTAl value -> id = 0
+                    }
+                    for(Event event : events){
+                        ArrayList<Object> point = new ArrayList<Object>();
+                        Long dateToJavascript = event.getLast_modified().getTime();
+                        Double value = event.getNumeric_value().doubleValue();
+                        point.add(dateToJavascript);
+                        point.add(value);
+                        JSONArray pointJS = new JSONArray(point);
+                        offers.add(pointJS);
+                    }
+
+                    JSONArray jsonAraay = new JSONArray(offers);
+                    results.add(jsonAraay); // jedna krivka
+
+                }
+                else{ // if not all users also for each selected user AND each product 
+                    for(String user : selectedUsers){
+                        List<Event> events = this.productNodes.get(new Integer(id)).getOfferEvents();
+                         List<JSONArray> offers = new ArrayList<JSONArray>();
+                        if(id == null){
+                            id = new Integer(0); // Default TOTAl value -> id = 0
+                        }
+                        for(Event event : events){
+                            if(event.getFk_user() != null && event.getFk_user().equals(user)){
+                                ArrayList<Object> point = new ArrayList<Object>();
+                                Long dateToJavascript = event.getLast_modified().getTime();
+                                Double value = event.getNumeric_value().doubleValue();
+                                point.add(dateToJavascript);
+                                point.add(value);
+                                JSONArray pointJS = new JSONArray(point);
+                                offers.add(pointJS);
+                            }
+                        }
+
+                        JSONArray jsonAraay = new JSONArray(offers);
+                        results.add(jsonAraay); // jedna krivka
+                    }
+
+                }
+
+            }
+        }
+        
+        
         JSONArray jsonAraays= new JSONArray(results);
         
         return jsonAraays;
@@ -496,5 +697,13 @@ public class AuctionBean {
     public UIDataTable getTable() {
         return table;
     }
+    
+    
+    public AllAuctionData getAllAuctionData() {
+        return allAuctionData;
+    }
 
+    public void setAllAuctionData(AllAuctionData allAuctionData) {
+        this.allAuctionData = allAuctionData;
+    }
 }

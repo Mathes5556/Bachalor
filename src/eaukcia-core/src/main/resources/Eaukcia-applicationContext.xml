@@ -92,6 +92,8 @@
     <bean id="auctionLogService" class="sk.adresa.eaukcia.core.service.impl.AuctionLogServiceImpl" autowire="constructor" />
     <bean id="auctionService" class="sk.adresa.eaukcia.core.service.impl.AuctionServiceImpl" autowire="constructor" />
     <bean id="constantsService" class="sk.adresa.eaukcia.core.service.impl.ConstantsServiceImpl" autowire="constructor" />
+    <bean id="allAuctionData" class="sk.adresa.eaukcia.core.service.impl.AllAuctionData" autowire="constructor" />
+    
     
 
     <!--

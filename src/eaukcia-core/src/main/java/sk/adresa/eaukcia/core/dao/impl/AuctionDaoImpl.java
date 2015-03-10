@@ -137,7 +137,7 @@ public class AuctionDaoImpl extends AbstractDao implements AuctionDao {
                 JsonArray childrens = obj.getAsJsonArray("children");
                 String price = obj.get("integerValue").toString();
                 String itemID = obj.get("itemId").toString();
-                BidForItem bid = new BidForItem(new Integer(itemID), null, offer.getTargetUserId(),new BigDecimal(price), offer.getTime(), offer.getUser());
+                BidForItem bid = new BidForItem(new Integer(itemID), null, offer.getUser().getLogin(),new BigDecimal(price), offer.getTime(), offer.getUser());
                 bidsInOneOffer.put(new Integer(itemID), bid);
                 System.out.print(price + " => " + itemID );
                 for(JsonElement children : childrens){
@@ -145,7 +145,7 @@ public class AuctionDaoImpl extends AbstractDao implements AuctionDao {
                     JsonArray childrens2 = obj.getAsJsonArray("children");
                     price = obj.get("integerValue").toString();
                     itemID = obj.get("itemId").toString();
-                    bid = new BidForItem(new Integer(itemID), null, offer.getTargetUserId(),new BigDecimal(price), offer.getTime(), offer.getUser());
+                    bid = new BidForItem(new Integer(itemID), null, offer.getUser().getLogin(),new BigDecimal(price), offer.getTime(), offer.getUser());
                     bidsInOneOffer.put(new Integer(itemID), bid);
                     //BidForItem bid = new BidForItem(new Integer(itemID), null, offer.getTargetUserId(),new BigDecimal(price), offer.getTime());
                     System.out.print(price + " => " + itemID );
@@ -157,7 +157,7 @@ public class AuctionDaoImpl extends AbstractDao implements AuctionDao {
                         }
                         price = obj.get("integerValue").toString();
                         itemID = obj.get("itemId").toString();
-                        bid = new BidForItem(new Integer(itemID), null, offer.getTargetUserId(),new BigDecimal(price), offer.getTime(), offer.getUser());
+                        bid = new BidForItem(new Integer(itemID), null, offer.getUser().getLogin(),new BigDecimal(price), offer.getTime(), offer.getUser());
                         bidsInOneOffer.put(new Integer(itemID), bid);
                         //BidForItem bid = new BidForItem(new Integer(itemID), null, offer.getTargetUserId(),new BigDecimal(price), offer.getTime());
                         System.out.print(price + " => " + itemID );
@@ -171,7 +171,7 @@ public class AuctionDaoImpl extends AbstractDao implements AuctionDao {
                             }
                             price = obj.get("integerValue").toString();
                             itemID = obj.get("itemId").toString();
-                            bid = new BidForItem(new Integer(itemID), null, offer.getTargetUserId(),new BigDecimal(price), offer.getTime(), offer.getUser());
+                            bid = new BidForItem(new Integer(itemID), null, offer.getUser().getLogin(),new BigDecimal(price), offer.getTime(), offer.getUser());
                             bidsInOneOffer.put(new Integer(itemID), bid);
                             //BidForItem bid = new BidForItem(new Integer(itemID), null, offer.getTargetUserId(),new BigDecimal(price), offer.getTime());
                             System.out.print(price + " => " + itemID );

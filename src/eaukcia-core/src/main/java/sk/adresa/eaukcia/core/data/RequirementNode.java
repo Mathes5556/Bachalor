@@ -4,6 +4,7 @@
  */
 package sk.adresa.eaukcia.core.data;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -12,7 +13,7 @@ import java.util.Collections;
  *
  * @author mathes
  */
-public class RequirementNode {
+public class RequirementNode implements Serializable{
     
     private Integer item_id;
     

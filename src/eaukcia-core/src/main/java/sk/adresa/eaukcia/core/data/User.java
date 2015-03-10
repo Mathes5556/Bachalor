@@ -1,8 +1,10 @@
 package sk.adresa.eaukcia.core.data;
 
+import com.sun.jndi.toolkit.dir.SearchFilter;
+import java.io.Serializable;
 import sk.adresa.eaukcia.core.data.LoggableObject;
 
-public class User implements LoggableObject {
+public class User implements LoggableObject, Serializable {
     
     public static final String ROLE_ADMIN = "ADMIN";
     public static final String ROLE_USER = "USER";

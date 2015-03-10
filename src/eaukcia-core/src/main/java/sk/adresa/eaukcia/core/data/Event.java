@@ -1,5 +1,6 @@
 package sk.adresa.eaukcia.core.data;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Date;
 
@@ -8,7 +9,7 @@ import java.util.Date;
  * 
  * @author mathes
  */
-public class Event implements Comparable<Event> {
+public class Event implements Comparable<Event>, Serializable {
      //TODO UNIT_TYPE,CODE
     protected Integer item_id;
         
