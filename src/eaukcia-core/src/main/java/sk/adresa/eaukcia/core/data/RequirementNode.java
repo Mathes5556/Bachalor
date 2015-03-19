@@ -42,7 +42,11 @@ public class RequirementNode implements Serializable{
         Double value = this.offerEvents.get(idOffer).getNumeric_value().doubleValue();
         return value;
     }
-
+    
+    public Event getLastOfferEvent(){
+        int idOffer = this.offerEvents.size() - 1;
+        return  this.offerEvents.get(idOffer);
+    }
         
     public void addOfferEvent(Event event){
         this.offerEvents.add(event);

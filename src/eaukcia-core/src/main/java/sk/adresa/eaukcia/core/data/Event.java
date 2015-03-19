@@ -21,13 +21,11 @@ public class Event implements Comparable<Event>, Serializable {
     
     protected Date last_modified;
     
-//    public Event(Integer item_id, BigDecimal numeric_value, String fk_user, Date last_modified) {
-//        this.item_id = item_id;
-//        this.numeric_value = numeric_value;
-//        this.fk_user = fk_user;
-//        this.last_modified = last_modified;
-//    }
-//    
+    public BigDecimal getPricePerItem(){
+        //TODO
+        return null;
+    }
+    
     public Integer getItem_id() {
         return item_id;
     }

@@ -15,8 +15,12 @@
         <result property = "value" column = "value"/>
         <result property = "time" column = "time"/>
     </resultMap>
-
-
+    
+    <select id = "getAuctionName"  resultType="string" >
+        SELECT name FROM auction LIMIT 1;
+     </select>
+     
+     
      <select id = "getRequirments"  resultType="sk.adresa.eaukcia.core.data.RequirementNode" >
         SELECT item_id, code, name, unit_Type, fk_parent, order_no
             FROM auction_criterion_list
@@ -152,5 +156,17 @@
         FROM auction_log auction
         WHERE id=#{value}
     </select>
- 
+    
+    <select id = "getAllAuctionLogs" resultMap = "auctionLogResult">
+        SELECT 
+            auction.id,  
+            auction.fk_auction, 
+            auction.fk_auction_round, 
+            auction.fk_user,
+            auction.fk_target_user, 
+            auction.fk_action,
+            auction.value, 
+            auction.time
+        FROM auction_log auction
+    </select>
 </mapper>

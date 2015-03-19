@@ -54,6 +54,10 @@ public class AuctionServiceImpl extends AbstractDao implements AuctionService {
         return this.auctionDao.getAllBids();
     } 
     
+    @Override
+    public String getNameOfAuction(){
+        return this.auctionDao.getNameOfAuction();
+    }
     
     @Override
     public HashMap<String, User> getUsers(){

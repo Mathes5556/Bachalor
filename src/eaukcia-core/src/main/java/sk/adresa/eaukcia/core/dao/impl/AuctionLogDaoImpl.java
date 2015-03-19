@@ -1,5 +1,6 @@
 package sk.adresa.eaukcia.core.dao.impl;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.ibatis.session.RowBounds;
@@ -19,9 +20,15 @@ public class AuctionLogDaoImpl extends AbstractDao implements AuctionLogDao{
     @Override
     public AuctionEvent getAuctionLog(int auctionLogId) {
         Object object = sqlSession.selectOne(DEFAULT_PREFIX + "getAuctionLog", auctionLogId);
-        return object instanceof AuctionEvent ? ((AuctionEvent) object) : null;
         
+        return object instanceof AuctionEvent ? ((AuctionEvent) object) : null;
     }
+    
+    @Override
+    public ArrayList<AuctionEvent> getAllAuctionLog(){
+        return (ArrayList<AuctionEvent>) sqlSession.selectList(DEFAULT_PREFIX + "getAllAuctionLogs");
+    }
+    
 
     @Override
     public PaginatedList<AuctionEvent> getFilteredAuctionLogs(AuctionEventFilter filter, Paging paging) {

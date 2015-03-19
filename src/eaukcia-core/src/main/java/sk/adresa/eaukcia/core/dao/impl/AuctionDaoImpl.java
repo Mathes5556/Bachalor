@@ -76,6 +76,11 @@ public class AuctionDaoImpl extends AbstractDao implements AuctionDao {
     }
     
     @Override
+    public String getNameOfAuction(){
+        return (String) sqlSession.selectOne(DEFAULT_PREFIX2 + "getAuctionName");
+    }
+    
+    @Override
     public List<RequirementNode> getAllRequirementForAuction(){
          List<RequirementNode> requirments = sqlSession.selectList(DEFAULT_PREFIX2 + "getRequirments");
          //ArrayList<ArrayList<BidForItem>> a = getAllBids();
@@ -89,13 +94,14 @@ public class AuctionDaoImpl extends AbstractDao implements AuctionDao {
         auctionLog.setSqlSession(sqlSession);
         ArrayList<AuctionEvent> JSONoffers = new ArrayList<AuctionEvent>();
         
-        for (int i = 1; i <= 631; i++) {
-            AuctionEvent auctionEvent = auctionLog.getAuctionLog(i);
+        
+        for (AuctionEvent auctionEvent : auctionLog.getAllAuctionLog()) {
+            //AuctionEvent auctionEvent = auctionLog.getAuctionLog(i);
             if (auctionEvent == null) {
                 continue;
             }
             if (auctionEvent.getAction().equals("setCriterionsForUser")) {   
-                System.out.println(auctionEvent.getValue());
+                //System.out.println(auctionEvent.getValue());
                 JSONoffers.add(auctionEvent);
             }
             
@@ -112,7 +118,7 @@ public class AuctionDaoImpl extends AbstractDao implements AuctionDao {
         
         for (AuctionEvent offer : JSONoffers) {
             if(!this.usersParticipateInAction.containsKey(offer.getUser().getLogin())){
-                this.usersParticipateInAction.put(offer.getTargetUserId(), offer.getUser());
+                this.usersParticipateInAction.put(offer.getUser().getLogin(), offer.getUser());
             }
            
             if(offer.getUser().getLogin().equals("admin")){

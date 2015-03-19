@@ -40,4 +40,6 @@ public interface AuctionDao {
     public List<RequirementNode> getAllRequirementForAuction();
     
     public HashMap<String, User> getUsersParticipateInAction();
+    
+    public String getNameOfAuction();
 }

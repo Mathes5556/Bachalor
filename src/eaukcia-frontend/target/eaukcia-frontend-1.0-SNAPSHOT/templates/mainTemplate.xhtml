@@ -29,20 +29,25 @@
             <script type="text/javascript">
             
             //<![CDATA[alert("ok3");
-            
-       
-            
+            var appModes = {
+                "ADD_NEW_AUCTION_MODE" : "ADD_NEW_AUCTION",
+                "PRODUCTS_COMPARISON_MODE" : "PRODUCTS_COMPARISON",
+                "USERS_COMPARISON_MODE" : "USERS_COMPARISON",
+                "AUCTIONS_COMPARISON_MODE" : "AUCTIONS_COMPARISON"
+            }
             //making data for main chart
-           
+            var applicationMode = #{auctionBean.applicationMode.toString()};
             var idsToShow =  #{auctionBean.ids};
+            var selectedAuctions = #{auctionBean.selectedAuctionsJSON};
+            var selectedUsers = #{auctionBean.selectedUsersJSON};
             var pole = #{auctionBean.historyOfOfferForNodes};
             var nameOfNodes =#{auctionBean.JSNameOfNode}; 
-            var selectedUsers = #{auctionBean.selectedUsersJSON};
+            var legendNames = #{auctionBean.legendForChart};
             dataToChart = [];
             for(var i=0;i < pole.length; i++){
                 var line = {};
                 line.data = pole[i];
-                line.name = selectedUsers[i];
+                line.name = legendNames[i];
                 dataToChart.push(line);
             }
             
@@ -226,14 +231,32 @@
                      $( this ).parent().hide();
                 });
                 
-                $(document).on('click', ".deleteUser"  , function() {
-                     var name = $(this).parent().attr('id');
-                     alert(name);
-                     var index = selectedUsers.indexOf(name);
-                     selectedUsers.splice(index, 1);
+                 $(document).on('click', ".deleteFilter"  , function() {
+                     var id = parseInt($(this).parent().attr('id'));
+                     alert(id);
+                     var index = idsToShow.indexOf(id);
+                     idsToShow.splice(index, 1);
 
                      $( this ).parent().hide();
                 });
+                
+                $(document).on('click', ".deleteFilter"  , function() {
+                     var id = parseInt($(this).parent().attr('id'));
+                     alert(id);
+                     var index = idsToShow.indexOf(id);
+                     idsToShow.splice(index, 1);
+
+                     $( this ).parent().hide();
+                });
+                
+                $(document).on('click', "#toProductMode", function() {
+                   alert("idem");
+                   a = #{auctionBean.setProductComparisonMode()};
+                     //var url = getUrl():
+                     //redirect(url);
+                     //return false;
+                });
+                
                 
                 var redirect = function(url){
                      window.location.replace(url);
@@ -249,15 +272,35 @@
                             result = result + ",";
                         }
                     }
+                    //users
                     var USERS_PREFIX = "&users=";
-                    result += USERS_PREFIX;
-                    for(var i = 0; i < selectedUsers.length;i++){
-                        name = selectedUsers[i];
-                        result += name;
-                        if(i+1 < selectedUsers.length){
-                            result +=",";
+                    if(selectedUsers.length > 0){
+                        result += USERS_PREFIX;
+                        for(var i = 0; i < selectedUsers.length;i++){
+                            name = selectedUsers[i];
+                            result += name;
+                            if(i+1 < selectedUsers.length){
+                                result +=",";
+                            }
                         }
                     }
+                    
+                    
+                    //auctions
+                    var AUCTIONS_PREFIX = "&auctions=";
+                    if(Object.keys(selectedAuctions).length > 0){
+                        result += AUCTIONS_PREFIX;
+                        var auctionHashs = Object.keys(selectedAuctions);
+                        for(var i = 0; i < auctionHashs.length;i++){
+                            auction = auctionHashs[i];
+                            result += auction;
+                            if(i+1 < selectedAuctions.length){
+                                result +=",";
+                            }
+                        }
+                    }
+                   
+                    
                     return result;
                 };
                 
@@ -268,6 +311,13 @@
                 
                 addProduct = function (el){
                     var id = parseInt(el.value);
+                    if(applicationMode == appModes.PRODUCTS_COMPARISON_MODE){
+                         
+                     }
+                     else{  //we want select only one id of product 
+                         idsToShow = [];
+                         $("selectedProducts").html("");
+                     }
                     idsToShow.push(id);
                     var name = el.options[el.selectedIndex].innerHTML;
                     
@@ -281,6 +331,13 @@
                 
                 addUser = function(el){
                      var userName = el.value;
+                     if(applicationMode == appModes.USERS_COMPARISON_MODE){
+                         
+                     }
+                     else{  //we want select only one user 
+                         selectedUsers = [];
+                         $("selectedUsers").html("");
+                     }
                      selectedUsers.push(userName);
                      alert(userName);
                      jQuery('<div/>', {
@@ -289,7 +346,33 @@
                         html:"<button type='button' class='btn btn-default'>" + userName +  "</button>\
                               <button class='deleteUser btn btn-danger' type='button'>-</button>"
                     }).appendTo('#selectedUsers');
-                }
+                };
+                
+                addAuction = function(el){
+                     var auctionNameHash = el.value;
+                     var auctionName = el.textContent;
+                     if(applicationMode == appModes.AUCTIONS_COMPARISON_MODE){
+                         
+                     }
+                     else{  //we want select only one auction 
+                         selectedAuctions = [];
+                         $("selectedAuctions").html("");
+                     }
+                     
+                     if(selectedAuctions[auctionNameHash] == undefined){
+                        selectedAuctions[auctionNameHash] = auctionName;
+                        alert(auctionName);
+                     }
+                     else{
+                         alert("Auction was already added");
+                     }
+                     jQuery('<div/>', {
+                        id: auctionNameHash,
+                        text: auctionName,
+                        html:"<button type='button' class='btn btn-default'>" + auctionName +  "</button>\
+                              <button class='deleteAuction btn btn-danger' type='button'>-</button>"
+                    }).appendTo('#selectedAuctions');
+                };
                 
                 var datesOfOffers = #{auctionBean.offersDate};
                 $('#container').highcharts({
@@ -387,8 +470,56 @@
             </script>
         </head>
         <body>
-           
-            <div>
+           <div class="row">
+            <div class="col-xs-3 col-sm-3 col-md-3">
+                <div class="sidebar-nav">
+                  <div class="navbar navbar-default" role="navigation">
+                    <div class="navbar-header">
+                      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".sidebar-navbar-collapse">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                      </button>
+                      <span class="visible-xs navbar-brand">Sidebar menu</span>
+                    </div>
+                    <div class="navbar-collapse collapse sidebar-navbar-collapse">
+                      <ul class="nav">
+                        <li class="active"><a href="#">Visualization of auction</a></li>
+                        <li>
+                            <h:form>
+                                <h:commandButton action="#{auctionBean.setProductComparisonMode()}" value="Comaprison of products" />
+                             </h:form>
+                        </li>
+                        <li>
+                            <h:form>
+                                <h:commandButton action="#{auctionBean.setUserComparisonMode()}" value="Comparison of users" />
+                             </h:form>
+                        </li>
+                        <li> ,
+                            <h:form>
+                                <h:commandButton action="#{auctionBean.setAuctionComparisonMode()}" value="Comparison of auctions"/>
+                             </h:form>
+                        </li>    
+                        <li>
+                            <a href="#">Add new auctions</a>
+                        </li>
+                        <br></br>
+                        <br></br>
+                        <br></br>
+                        <br></br>
+                        <br></br>
+                        <br></br>
+                        <br></br>
+                        <br></br>
+                        <br></br>
+                        <br></br> 
+                      </ul>
+                    </div><!--/.nav-collapse -->
+                  </div>
+                </div>
+              </div>
+            <div class="col-xs-9 col-sm-9 col-md-9">
                 <h:form>
                     <h:selectOneMenu value="products" onchange="addProduct(this)">
                         <f:selectItems value="#{auctionBean.allProducts}" var="node"
@@ -402,6 +533,15 @@
                         itemValue="#{user}" itemLabel="#{user}"/>
                     </h:selectOneMenu>
                 </h:form>
+                
+                 <h:form>
+                    <h:selectOneMenu value="auctions" onchange="addAuction(this)">
+                        <f:selectItems value="#{auctionBean.auctions}" var="auction"
+                                       itemValue="#{auction.name.hashCode()}" itemLabel="#{auction.name}"/>
+                    </h:selectOneMenu>
+                </h:form>
+                
+                
                 Users:
                      
                 <br></br>
@@ -429,7 +569,19 @@
                             </div> 
                         </ui:repeat>
                 </h:panelGroup>
-        
+                <br></br>
+                auctions
+                 <h:panelGroup id="selectedAuctions">
+                        <ui:repeat var="auction" value="#{auctionBean.selectedAuctionsObjects}">
+                            <div id="#{auction.name.hashCode()}">
+                              <button type='button' class='btn btn-default'> #{auction.name}</button>
+                              <button class='deleteAuction btn btn-danger' type='button'>-</button>
+                            </div> 
+                        </ui:repeat>
+                </h:panelGroup>
+                
+               
+                
                 
                 <button id="showNewPage" type="button" class="btn btn-success">Show</button>
             </div>
@@ -449,7 +601,7 @@
              </ui:repeat>
             
             
-            
+           </div>
         </body>
     </f:view>
 </html>

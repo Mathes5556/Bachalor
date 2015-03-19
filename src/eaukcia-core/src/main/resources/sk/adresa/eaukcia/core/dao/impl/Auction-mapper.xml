@@ -22,7 +22,8 @@
         SELECT count(*) 
         FROM v_auction 
     </select>
-
+    
+    
     <select id = "getAuction" resultMap = "auctionResult" parameterType = "int">
         SELECT * FROM v_auction WHERE id = #{value}
     </select>

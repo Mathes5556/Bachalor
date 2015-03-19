@@ -2,6 +2,7 @@ package sk.adresa.eaukcia.frontend.beans;
 
 
 import com.google.gson.Gson;
+import com.sun.org.apache.bcel.internal.generic.AALOAD;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -33,6 +34,7 @@ import org.apache.log4j.Logger;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.json.JSONObject;
+import org.omg.CORBA.INTERNAL;
 
 import org.richfaces.component.UIDataTable;
 import org.richfaces.component.html.HtmlDataTable;
@@ -45,6 +47,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.SerializationUtils;
 import sk.adresa.eaukcia.core.dao.impl.AuctionDaoImpl;
 import sk.adresa.eaukcia.core.dao.impl.AuctionLogDaoImpl;
+import sk.adresa.eaukcia.core.data.ApplicationMode;
 import sk.adresa.eaukcia.core.data.AuctionData;
 
 import sk.adresa.eaukcia.core.data.Auction;
@@ -79,7 +82,13 @@ public class AuctionBean {
     private AuctionService auctionService;
     
     private AllAuctionData allAuctionData;
-
+    
+    private String auctionName;
+    
+    //todo arraylisty ktory si budy pamarat seected ids,auctions, users
+    
+    private ApplicationMode applicationMode = ApplicationMode.PRODUCTS_COMPARISON;
+    
     static Logger logger = Logger.getLogger(AuctionBean.class);
     private AuctionLogBean auctionLogBean;
     private UIDataTable table;
@@ -93,96 +102,108 @@ public class AuctionBean {
     
     @PostConstruct
     public void initBean() throws IOException{
-        //AuctionLogDaoImpl log = new AuctionLogDaoImpl();
-        //AuctionEvent event = log.getAuctionLog(55);
-        this.productNodes = this.auctionService.getAuctionHashMap();
-        ArrayList<HashMap<Integer,BidForItem>>  allBids = this.auctionService.getBids();
-        this.users = this.auctionService.getUsers();
         this.auctions = this.allAuctionData.getAuctions();
-        
-        //doplnim requirment nody o bidy 
-        for (Map.Entry<Integer, RequirementNode> entry : productNodes.entrySet()) {
-            Integer id = entry.getKey();
-            RequirementNode requirementNode = entry.getValue();
-            
-            for (HashMap<Integer,BidForItem> bidsInOneOffer : allBids){
-                if(bidsInOneOffer.size() == 0 ){
-                    continue;
-                }
-                
-                if(bidsInOneOffer.get(id) == null){//v tomto bide nebol zlepseny dany requirementNode pouziem stary offer
-                    //TODO vyriesit/ocekovat prvy bid
-                    // TODO dojdem sem vobec niekedy ?
-                    Event lastOfferEvent = requirementNode.getOfferEvents().get(requirementNode.getOfferEvents().size()-1);
-                    //root je vzdy dany 
-                    BidForItem rootBid = bidsInOneOffer.get(new Integer(0));
-                    if(rootBid != null){
-                        String byUser = rootBid.getFk_user();
-                        lastOfferEvent.setFk_user(byUser);
+        this.auctionName = this.auctionService.getNameOfAuction();
+        if(this.wasAuctionAlreadyLoadedFromDb(this.auctionName)){
+            //give first auction as selected TODO??
+             AuctionData auctionExample = this.auctions.get(0);
+             this.productNodes = auctionExample.getProductNodes();
+             this.users = auctionExample.getUsers();
+             this.productsCodeMap = auctionExample.getProductsCodeMap();
+        }
+        else{  // load data from DB and save it
+            this.productNodes = this.auctionService.getAuctionHashMap();
+            ArrayList<HashMap<Integer,BidForItem>> allBids = this.auctionService.getBids();
+            this.users = this.auctionService.getUsers();
+            //doplnim requirment nody o bidy 
+            for (Map.Entry<Integer, RequirementNode> entry : productNodes.entrySet()) {
+                Integer id = entry.getKey();
+                RequirementNode requirementNode = entry.getValue();
+
+                for (HashMap<Integer,BidForItem> bidsInOneOffer : allBids){
+                    if(bidsInOneOffer.size() == 0 ){
+                        continue;
                     }
-                    requirementNode.addOfferEvent(lastOfferEvent);
-                }
-                else{
-                     BidForItem bid = bidsInOneOffer.get(id);
-                     BidEvent newEvent = new BidEvent(bid.getItem_id(), bid.getNumeric_value(), bid.getFk_user(), bid.getTime());
-                     requirementNode.addOfferEvent(newEvent);
+
+                    if(bidsInOneOffer.get(id) == null){//v tomto bide nebol zlepseny dany requirementNode pouziem stary offer
+                        //TODO vyriesit/ocekovat prvy bid
+                        if(requirementNode.getOfferEvents().isEmpty()){
+                            continue;
+                        }
+                        
+                        Event lastOfferEvent = requirementNode.getOfferEvents().get(requirementNode.getOfferEvents().size()-1);
+                        //root je vzdy dany 
+                        BidForItem rootBid = bidsInOneOffer.get(new Integer(0));
+                        if(rootBid != null){
+                            String byUser = rootBid.getFk_user();
+                            lastOfferEvent.setFk_user(byUser);
+                        }
+                        requirementNode.addOfferEvent(lastOfferEvent);
+                    }
+                    else{
+                         BidForItem bid = bidsInOneOffer.get(id);
+                         BidEvent newEvent = new BidEvent(bid.getItem_id(), bid.getNumeric_value(), bid.getFk_user(), bid.getTime());
+                         requirementNode.addOfferEvent(newEvent);
+                    }
                 }
             }
+
+            //make hashmap where code of product is key
+
+            for (Map.Entry<Integer, RequirementNode> entry : productNodes.entrySet()) {
+                RequirementNode requirementNode = entry.getValue();
+                if(requirementNode != null && requirementNode.getCode() != null){
+                    this.productsCodeMap.put(requirementNode.getCode().trim(), requirementNode);
+                }    
+            }
+            //save srialized object to disk 
+            AuctionData createdAuction = this.saveAuctionObject(this.auctionName);
+            this.auctions.add(createdAuction);
         }
         
-        //make hashmap where code of product is key
-        
-        for (Map.Entry<Integer, RequirementNode> entry : productNodes.entrySet()) {
-            RequirementNode requirementNode = entry.getValue();
-            if(requirementNode != null && requirementNode.getCode() != null){
-                productsCodeMap.put(requirementNode.getCode().trim(), requirementNode);
-            }    
-        }
-        
-        
-        
-        
-       ArrayList<File>  filesToSerialize = this.getAllSerializeFiles();
-       this.auctions = loadAuctionDatas(filesToSerialize);
+       //ArrayList<File>  filesToSerialize = this.getAllSerializeFiles();
+       //this.auctions = loadAuctionDatas(filesToSerialize);
        // this.loadAllAuctions2();
-        this.importBackUp();
+        
+        
+        //this.importBackUp();
     }
     
-    private void saveAuctionObject(String name, HashMap<String,RequirementNode> productsCodeMap){
+    private AuctionData saveAuctionObject(String name){
         // save to whole Auction Object
-        AuctionData wholeAuctionData = new AuctionData(name, this.productNodes, this.users, productsCodeMap);
+        AuctionData wholeAuctionData = new AuctionData(name, this.productNodes, this.users, this.productsCodeMap);
         try {
             wholeAuctionData.writeObject();
         } catch (Exception e) {
             e.printStackTrace(System.out);
             System.out.print("Cant save serialization");
         }
+        return wholeAuctionData;
     }
     
-    private ArrayList<File> getAllSerializeFiles(){
-        ArrayList<File> result = new ArrayList<File>();
-        String dir = System.getProperty("user.dir");
-        File folder = new File(dir);
-        File[] listOfFiles = folder.listFiles();
-        for (File file : listOfFiles) {
-            if (file.isFile()) {
-                if(file.getName().contains(".ser")){
-                    result.add(file);
-                }  
+    /**
+     * compare hash of names and if equal then set as one main auction objectsssss
+     * @param auctionName 
+     */
+    private void setAuction(String auctionNameHash){
+        Integer hashOfSelectedAuction = new Integer(auctionNameHash);
+        for(AuctionData auction: this.auctions){
+            
+            if(new Integer(auction.getName().hashCode()).equals(hashOfSelectedAuction)){
+                this.productNodes = auction.getProductNodes();
+                this.users = auction.getUsers();
+                this.productsCodeMap = auction.getProductsCodeMap();
             }
         }
-        return result;
     }
     
-    private ArrayList<AuctionData> loadAuctionDatas(ArrayList<File> filesToSerialize){
-        ArrayList<AuctionData> result = new ArrayList<AuctionData>();
-        for(File file: filesToSerialize){
-             AuctionData auctionData = AuctionData.getAuctionData(file.getName());
-             if(auctionData != null){
-                 result.add(auctionData);
-             }
+    public boolean wasAuctionAlreadyLoadedFromDb(String auctionName){
+        for(AuctionData auction: this.auctions){
+            if(auction.getName().equals(auctionName)){
+                return true;
+            }
         }
-        return result;
+        return false;
     }
     
     public void importBackUp() throws IOException{
@@ -241,6 +262,64 @@ public class AuctionBean {
         return  this.getParamValue(SELECTED_ITEM_CODE);
     }
     
+    public ApplicationMode getApplicationMode(){
+        return this.applicationMode;
+    }
+    
+    /**
+     * user can see comaparison for MANY products, ONE auction, ONE USER  - PRODUCTS_COMPARISON
+     * @return 
+     */
+    public boolean isProductComparisonMode(){
+        return this.applicationMode == applicationMode.PRODUCTS_COMPARISON;
+    }
+    
+    /**
+     *  * user can see comaparison for ONE products, MANY auctions, ONE USER
+     * @return 
+     */
+    public boolean isProducAuctiontComparisonMode(){
+        return this.applicationMode == applicationMode.AUCTIONS_COMPARISON;
+    }
+    
+    /**
+     * @return 
+     */
+    public boolean isProducUserComparisonMode(){
+        return this.applicationMode == applicationMode.USERS_COMPARISON;
+    }
+    
+    public void setApplicationMode(ApplicationMode appMode){
+        this.applicationMode = appMode;
+    }
+    
+    public String setProductComparisonMode(){
+        this.applicationMode = ApplicationMode.PRODUCTS_COMPARISON;
+        return "changeMode";
+    }
+    
+    public String setAuctionComparisonMode(){
+        this.applicationMode = ApplicationMode.AUCTIONS_COMPARISON;
+        return "changeMode";
+    }
+   
+    public String setUserComparisonMode(){
+        this.applicationMode = ApplicationMode.USERS_COMPARISON;
+        return "changeMode";
+    }
+    
+    private final static String MODE = "mode";
+    
+    public ApplicationMode getSelectedApplicationMode(){
+        String mode =  this.getParamValue(MODE);
+        ApplicationMode selectedMode =  ApplicationMode.valueOf(mode);
+        this.setApplicationMode(selectedMode);
+        return selectedMode;
+    }
+    
+    /*
+     * get hash of name of selected auctions
+     */
     public ArrayList<String> getSelectedAuctions(){
         ArrayList<String> result = new ArrayList<String> ();
         String value =  this.getParamValue(AUCTIONS);
@@ -254,8 +333,51 @@ public class AuctionBean {
         return result;
     }
     
-    public JSONArray getSelectedUsersJSON(){
-        return new JSONArray(this.getSelectedUsers());    
+    public ArrayList<AuctionData> getSelectedAuctionsObjects(){
+        ArrayList<AuctionData> result = new ArrayList<AuctionData>();
+        for(String hashOfAuctionsName : this.getSelectedAuctions()){
+            if(hashOfAuctionsName.equals(ALL_AUCTIONS)) break;
+            for(AuctionData auction : this.auctions){
+                if(new Integer(hashOfAuctionsName).equals(auction.getName().hashCode())){
+                    result.add(auction);
+                }
+            }
+        }
+        return result; 
+    }
+    
+    public JSONArray getLegendForChart(){
+        ArrayList<String> result = new ArrayList<String>();
+        ArrayList<String> selectedAuctions = this.getSelectedAuctions();
+        ArrayList<String> selectedUsers = this.getSelectedUsers();
+        if(selectedAuctions.size() > 1){ // auctions are in legend
+            for(AuctionData auction : this.getSelectedAuctionsObjects()){
+                result.add(auction.getName());
+            }
+        }
+        else if(selectedUsers.size() > 1 ){ // users are in legend 
+            result = selectedUsers;
+        }
+        else{ // products are in legend(for one user)
+            for(RequirementNode selectedNode : this.getNodes()){
+                result.add(selectedNode.getName());
+            }
+        }
+        return new JSONArray(result);    
+    }
+    
+    public ArrayList<AuctionData> getAuctions(){
+        return this.auctions;
+    }
+    
+    public JSONObject getSelectedAuctionsJSON(){
+        Map<Integer, String> auctions = new HashMap<Integer, String>();
+        for(AuctionData auction : this.getSelectedAuctionsObjects()){
+            if(auction != null){
+                auctions.put(new Integer(auction.getName().hashCode()), auction.getName());
+            }
+        }
+        return new JSONObject(auctions);
     }
     
     public ArrayList<String> getSelectedUsers(){
@@ -270,6 +392,10 @@ public class AuctionBean {
             result.add(users[i]);
         }
         return result;
+    }
+    
+    public JSONArray getSelectedUsersJSON(){
+        return new JSONArray(this.getSelectedAuctions());
     }
     
     public ArrayList<Integer> getIds(){
@@ -447,6 +573,7 @@ public class AuctionBean {
             if(idOffer == -1){ // then last
                 idOffer = children.getOfferEvents().size() - 1;
             }
+            if(children.getOfferEvents().isEmpty()) continue;
             Double value = children.getOfferEvents().get(idOffer).getNumeric_value().doubleValue();
             results.add(value);
         }
@@ -472,11 +599,13 @@ public class AuctionBean {
     
     public JSONArray  getHistoryOfOfferForNodes(){
        // kazdy JSONArray jedna krivka 
-        List<JSONArray> results = new ArrayList<JSONArray>();
-        ArrayList<String> selectedUsers = this.getSelectedUsers();        
-        ArrayList<Integer> ids =  this.getIds(); //selected id by  
-        ArrayList<String> selectedAuctions = this.getSelectedAuctions();
+        List<JSONArray> results = new ArrayList<JSONArray>();      
+            ArrayList<String> selectedAuctions = this.getSelectedAuctions();
         boolean allAuctions = isSelectedAllAuctions(selectedAuctions);
+        
+        if(selectedAuctions.isEmpty()){
+            return new JSONArray();
+        }
         
         if(selectedAuctions.size() > 1 || allAuctions){ // there is more then one auctions selected by user
             String selectedCode = this.getSelectedCode(); 
@@ -497,9 +626,9 @@ public class AuctionBean {
                selectedAuctionObjects = this.auctions; 
             }
             else{
-                for(String auctionName : selectedAuctions){
+                for(String auctionNameHash : selectedAuctions){
                     for(AuctionData auctionObject : this.auctions){
-                        if(auctionObject.getName().equals(auctionName)){
+                        if(new Integer(auctionObject.getName().hashCode()).equals(new Integer(auctionNameHash))){
                             selectedAuctionObjects.add(auctionObject);
                         }
                     }
@@ -515,6 +644,7 @@ public class AuctionBean {
                 List<JSONArray> offers = new ArrayList<JSONArray>();
                 //we add events without time!
                 for(Event event : events){
+                    //TODO add doblue value for one item!!
                     ArrayList<Double> point = new ArrayList<Double>();
                     Double value = event.getNumeric_value().doubleValue();
                     point.add(value);
@@ -526,7 +656,11 @@ public class AuctionBean {
             }
         }
         else{ // only one auction
-            for(Integer id : ids){
+            //set selected auction
+            this.setAuction(selectedAuctions.get(0));
+            ArrayList<Integer> ids =  this.getIds(); //selected id by 
+            ArrayList<String> selectedUsers = this.getSelectedUsers();  //selected users from URL
+            for(Integer id : ids){ //
                 if(selectedUsers.contains(ALL_USERS)){  // if all_users also prdocuct vs product only
                      List<Event> events = this.productNodes.get(new Integer(id)).getOfferEvents();
                      List<JSONArray> offers = new ArrayList<JSONArray>();
@@ -581,6 +715,10 @@ public class AuctionBean {
         return jsonAraays;
     }
     
+    /**
+     * get selected product nodes
+     * @return 
+     */
     public ArrayList<RequirementNode> getNodes(){
         ArrayList<RequirementNode> nodes = new ArrayList<RequirementNode>();
         ArrayList<Integer> ids =  this.getIds(); 
@@ -706,4 +844,6 @@ public class AuctionBean {
     public void setAllAuctionData(AllAuctionData allAuctionData) {
         this.allAuctionData = allAuctionData;
     }
+    
+    
 }

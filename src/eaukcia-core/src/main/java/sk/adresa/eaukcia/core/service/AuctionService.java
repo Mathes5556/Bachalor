@@ -56,5 +56,11 @@ public interface AuctionService {
      */
     public HashMap<String, User> getUsers();
     
+    /**
+     * get name of auction currently loaded id DB 
+     * @return 
+     */
+    public String getNameOfAuction();
+    
 }
 
