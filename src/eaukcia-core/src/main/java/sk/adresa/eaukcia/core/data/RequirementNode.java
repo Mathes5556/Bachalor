@@ -5,6 +5,8 @@
 package sk.adresa.eaukcia.core.data;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -28,6 +30,8 @@ public class RequirementNode implements Serializable{
     private int fk_parent;
     
     private  int order_no;
+
+    private int amount;
     
     private RequirementNode parent;
      
@@ -38,16 +42,39 @@ public class RequirementNode implements Serializable{
     private ArrayList<Event> offerEvents = new ArrayList<Event>();
     
     public Double getLastOffer(){
+        if(this.offerEvents.isEmpty()){
+            return (double) 0;
+        }
         int idOffer = this.offerEvents.size() - 1;
         Double value = this.offerEvents.get(idOffer).getNumeric_value().doubleValue();
         return value;
     }
     
+    public Double getLastOffer(String byUser){
+        Event bestOffer = null;
+        for(Event offer : this.offerEvents){
+            if(offer.getFk_user().equals(byUser)){
+                bestOffer = offer;   
+            }
+        }
+        return bestOffer.getNumeric_value().doubleValue();
+    }
+    
     public Event getLastOfferEvent(){
+        if(this.offerEvents.isEmpty()){
+            return null;
+        }
         int idOffer = this.offerEvents.size() - 1;
         return  this.offerEvents.get(idOffer);
     }
         
+    public BigDecimal getFinalOfferPerOneItem(){
+        Event lastOffer =  this.getLastOfferEvent();
+        if(lastOffer == null) return BigDecimal.ZERO;
+        return lastOffer.getNumeric_value()
+                             .divide(new BigDecimal(this.getAmount()),3, RoundingMode.FLOOR);
+    }
+    
     public void addOfferEvent(Event event){
         this.offerEvents.add(event);
     }
@@ -144,5 +171,12 @@ public class RequirementNode implements Serializable{
         this.childrens = childrens;
     }
     
-    
+    public int getAmount() {
+        return amount / 10000;
+    }
+
+    public void setAmount(int amount) {
+        this.amount = amount;
+    }
+
 }

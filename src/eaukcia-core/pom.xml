@@ -16,6 +16,11 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
   <dependencies>
+         <dependency>
+            <groupId>com.google.apis</groupId>
+            <artifactId>google-api-services-mapsengine</artifactId>
+            <version>v1-rev59-1.20.0</version>
+        </dependency>
         <dependency>
             <groupId>postgresql</groupId>
             <artifactId>postgresql</artifactId>
@@ -37,5 +42,12 @@
       <version>2.1</version>
       <type>jar</type>
     </dependency>
+    <dependency>
+	<groupId>commons-lang</groupId>
+	<artifactId>commons-lang</artifactId>
+	<version>2.6</version>
+    </dependency>
+
   </dependencies>
+  
 </project>

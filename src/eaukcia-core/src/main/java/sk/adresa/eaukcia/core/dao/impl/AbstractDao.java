@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package sk.adresa.eaukcia.core.dao.impl;
 
 import org.apache.ibatis.session.SqlSession;
@@ -9,10 +5,6 @@ import sk.adresa.eaukcia.core.exception.EaukciaObjectNotFoundException;
 import sk.adresa.eaukcia.core.exception.EaukciaRuntimeDataAccessException;
 import sk.adresa.eaukcia.core.util.Assert;
 
-/**
- *
- * @author juraj
- */
 public class AbstractDao {
     protected SqlSession sqlSession;
 

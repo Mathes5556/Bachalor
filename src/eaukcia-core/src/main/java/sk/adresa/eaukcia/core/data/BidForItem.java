@@ -4,15 +4,17 @@
  */
 package sk.adresa.eaukcia.core.data;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Date;
+import java.util.HashMap;
 
 /**
  *
  * @author mathes
  */
-public class BidForItem {
+public class BidForItem implements Serializable{
     
     private BigInteger code;
     
@@ -26,6 +28,8 @@ public class BidForItem {
     
     private User user;
     
+    HashMap<Integer,BidForItem> allBidsInOffer = new HashMap<Integer, BidForItem>();
+
     
     public BidForItem(Integer item_id, BigInteger code, String fk_user, BigDecimal numeric_value, Date time,  User user) {
         this.code = code;
@@ -34,6 +38,14 @@ public class BidForItem {
         this.item_id = item_id;
         this.time = time;
         this.user = user;
+    }
+    
+    public HashMap<Integer, BidForItem> getAllBidsInOffer() {
+        return allBidsInOffer;
+    }
+
+    public void setAllBidsInOffer(HashMap<Integer, BidForItem> allBidsInOffer) {
+        this.allBidsInOffer = allBidsInOffer;
     }
 
     public void setCode(BigInteger code) {

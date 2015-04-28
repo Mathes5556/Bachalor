@@ -20,6 +20,8 @@
             type="text/javascript"></script>
             <script src="http://code.highcharts.com/highcharts.js"></script>
             <script src="http://code.highcharts.com/modules/exporting.js"></script>
+            <script type="text/javascript" src="http://www.highcharts.com/media/com_demo/highslide-full.min.js"></script>
+            <script type="text/javascript" src="http://www.highcharts.com/media/com_demo/highslide.config.js" charset="utf-8"></script>
             <script type="text/javascript" 
                 src="js/d3.js">
             </script>
@@ -33,30 +35,69 @@
                 "ADD_NEW_AUCTION_MODE" : "ADD_NEW_AUCTION",
                 "PRODUCTS_COMPARISON_MODE" : "PRODUCTS_COMPARISON",
                 "USERS_COMPARISON_MODE" : "USERS_COMPARISON",
-                "AUCTIONS_COMPARISON_MODE" : "AUCTIONS_COMPARISON"
+                "AUCTIONS_COMPARISON_MODE" : "AUCTIONS_COMPARISON",
+                "TREE_VISUALIZATION_OF_AUCTION" : "TREE_VISUALIZATION_OF_AUCTION"
             }
             //making data for main chart
-            var applicationMode = #{auctionBean.applicationMode.toString()};
-            var idsToShow =  #{auctionBean.ids};
+            var applicationMode = "#{auctionBean.applicationMode.toString()}";  
+            var selectedCodes =  #{auctionBean.selectedCodesJSON};
             var selectedAuctions = #{auctionBean.selectedAuctionsJSON};
             var selectedUsers = #{auctionBean.selectedUsersJSON};
+            
             var pole = #{auctionBean.historyOfOfferForNodes};
+            var whichUsersMadeBid = #{auctionBean.usersBidJSON};
             var nameOfNodes =#{auctionBean.JSNameOfNode}; 
             var legendNames = #{auctionBean.legendForChart};
-            dataToChart = [];
+                dataToChart = [];
+            var dataObjects = [];
+            //TODO for more code for loop..
+            
+            //if is no slected code we want to add root
+            var numberOfIteration = function(){
+                if(applicationMode == appModes.PRODUCTS_COMPARISON_MODE){
+                   return selectedCodes.length == 0? 1 : selectedCodes.length;
+                }
+                else if(applicationMode == appModes.USERS_COMPARISON_MODE){
+                    return selectedUsers.length;
+                }
+                else if(applicationMode == appModes.AUCTIONS_COMPARISON_MODE){
+                    return Object.keys(selectedAuctions).length;
+                }
+            }
+            //var numberOfIteration = selectedCodes.length == 0? 1 : selectedCodes.length;
+            var n = numberOfIteration();
+            for(var j=0; j < n; j++){
+                if(typeof pole[j] === "undefined") {
+                    continue;
+                }
+                var dataObject = []; 
+                for(var i=0;i < pole[j].length; i++){
+                    var array = pole[j][i];
+                    var object = {
+                                 'x' : array[0],
+                                 'y' : array[1],
+                                 'user' : array[2],
+                                 'fullOffer' : array[3]
+                                 }
+                    dataObject.push(object);
+                }
+                dataObjects.push(dataObject);
+            }
+           
             for(var i=0;i < pole.length; i++){
                 var line = {};
-                line.data = pole[i];
+                line.data = dataObjects[i];
                 line.name = legendNames[i];
                 dataToChart.push(line);
             }
             
+                        
             $(function  () {    
              function drawTree(DOMelement){
                  var m = [40, 120, 40, 120],
                         w = 1200 - m[1] - m[3],
                         h = 600 - m[0] - m[2],
-                        i = 0,
+                        i = 0,                                                                                                                                                                                                                  
                         root;
 
                     var tree = d3.layout.tree()
@@ -70,8 +111,8 @@
                         .attr("height", h + m[0] + m[2])
                       .append("svg:g")
                         .attr("transform", "translate(" + m[3] + "," + m[0] + ")");
-
-                    d3.json("js/flame.json", function(json) {
+                        //TODO remove json call
+                   // d3.json("js/flame.json", function(json) {
                       //root = json;
                       root = #{auctionBean.hierarchyForTree};
                       root.x0 = h / 2;
@@ -83,20 +124,28 @@
                           toggle(d);
                         }
                       }
-
-                      // Initialize the display to show a few nodes.
                       root.children.forEach(toggleAll);
-                      //toggle(root.children[1]);
-                      //toggle(root.children[1].children[2]);
-                     // toggle(root.children[9]);
-                      //toggle(root.children[9].children[0]);
-
                       update(root);
-                    });
+                   // });
                  
                 function update(source) {
                      var duration = d3.event && d3.event.altKey ? 5000 : 500;
+                       // compute the new height
+                    var levelWidth = [1];
+                    var childCount = function(level, n) {
 
+                      if(n.children && n.children.length > 0) {
+                        if(levelWidth.length <= level + 1) levelWidth.push(0);
+
+                        levelWidth[level+1] += n.children.length;
+                        n.children.forEach(function(d) {
+                          childCount(level + 1, d);
+                        });
+                      }
+                    };
+                    childCount(0, root); 
+                     var newHeight = d3.max(levelWidth) * 80; // CHANGED 40 pixels per line  
+                     tree = tree.size([newHeight, w]);
                      // Compute the new tree layout.
                      var nodes = tree.nodes(root).reverse();
 
@@ -199,11 +248,15 @@
                  
              }   
             
-             for(var i = 0; i < idsToShow.length;i++){
-                        id = idsToShow[i];
-                        drawTree(".tree" + id.toString(), id);
+             //for(var i = 0; i < selectedCodes.length;i++){
+             //           id = selectedCodes[i];
+             //           drawTree(".tree" + i.toString(), id);
+             //}
+             //TODO only if TREE_VISUALIZATION_OF_AUCTION ?
+             if(Object.keys(selectedAuctions).length > 0){
+                 drawTree(".tree");
              }
-        
+             
             // ################## end of tree ###################
             
             
@@ -220,105 +273,92 @@
                 dataForPieChart.push(childrens)
             }
             
+            $(document).on('click', ".deleteFilter"  , function() {
+                var id = $(this).parent().attr('id');
+                alert(id);
+                var index = selectedCodes.indexOf(id);
+                selectedCodes.splice(index, 1);
+                $( this ).parent().hide();
+            });
+                
+            $(document).on('click', ".deleteUser"  , function() {
+                 var userName = $(this).parent().attr('id');            
+                    alert(userName);
+                    var index = selectedUsers.indexOf(userName);
+                    selectedUsers.splice(userName, 1);
+                    $( this ).parent().hide();
+            });
             
-            
-                $(document).on('click', ".deleteFilter"  , function() {
-                     var id = parseInt($(this).parent().attr('id'));
-                     alert(id);
-                     var index = idsToShow.indexOf(id);
-                     idsToShow.splice(index, 1);
-
-                     $( this ).parent().hide();
-                });
+             $(document).on('click', "#headOfTableForHistory"  , function() {
+                   $('.nodesInHistory').toggle();
+            });
+                  
+            var redirect = function(url){
+                 window.location.replace(url);
+            };
                 
-                 $(document).on('click', ".deleteFilter"  , function() {
-                     var id = parseInt($(this).parent().attr('id'));
-                     alert(id);
-                     var index = idsToShow.indexOf(id);
-                     idsToShow.splice(index, 1);
-
-                     $( this ).parent().hide();
-                });
-                
-                $(document).on('click', ".deleteFilter"  , function() {
-                     var id = parseInt($(this).parent().attr('id'));
-                     alert(id);
-                     var index = idsToShow.indexOf(id);
-                     idsToShow.splice(index, 1);
-
-                     $( this ).parent().hide();
-                });
-                
-                $(document).on('click', "#toProductMode", function() {
-                   alert("idem");
-                   a = #{auctionBean.setProductComparisonMode()};
-                     //var url = getUrl():
-                     //redirect(url);
-                     //return false;
-                });
-                
-                
-                var redirect = function(url){
-                     window.location.replace(url);
-                };
-                
-                var getUrl = function(){
-                    var BASE_URL = "http://localhost:8080/eaukcia/index.faces?id=";
-                    var result = BASE_URL;
-                    for(var i = 0; i < idsToShow.length;i++){
-                        id = idsToShow[i];
-                        result = result + id;
-                        if(i+1 < idsToShow.length){
-                            result = result + ",";
+            var getUrl = function(){
+                var BASE_URL = "http://localhost:8080/eaukcia/index.faces?id=";
+                var result = BASE_URL;
+                for(var i = 0; i < selectedCodes.length;i++){
+                    id = selectedCodes[i];
+                    result = result + id;
+                    if(i+1 < selectedCodes.length){
+                        result = result + ",";
+                    }
+                }
+                //users
+                var USERS_PREFIX = "&users=";
+                if(selectedUsers.length > 0){
+                    result += USERS_PREFIX;
+                    for(var i = 0; i < selectedUsers.length;i++){
+                        name = selectedUsers[i];
+                        result += name;
+                        if(i+1 < selectedUsers.length){
+                            result +=",";
                         }
                     }
-                    //users
-                    var USERS_PREFIX = "&users=";
-                    if(selectedUsers.length > 0){
-                        result += USERS_PREFIX;
-                        for(var i = 0; i < selectedUsers.length;i++){
-                            name = selectedUsers[i];
-                            result += name;
-                            if(i+1 < selectedUsers.length){
-                                result +=",";
-                            }
+                }
+
+
+                //auctions
+                var AUCTIONS_PREFIX = "&auctions=";
+                if(Object.keys(selectedAuctions).length > 0){
+                    result += AUCTIONS_PREFIX;
+                    var auctionHashs = Object.keys(selectedAuctions);
+                    for(var i = 0; i < auctionHashs.length;i++){
+                        auction = auctionHashs[i];
+                        result += auction;
+                        if(i+1 < auctionHashs.length){
+                            result +=",";
                         }
                     }
-                    
-                    
-                    //auctions
-                    var AUCTIONS_PREFIX = "&auctions=";
-                    if(Object.keys(selectedAuctions).length > 0){
-                        result += AUCTIONS_PREFIX;
-                        var auctionHashs = Object.keys(selectedAuctions);
-                        for(var i = 0; i < auctionHashs.length;i++){
-                            auction = auctionHashs[i];
-                            result += auction;
-                            if(i+1 < selectedAuctions.length){
-                                result +=",";
-                            }
-                        }
-                    }
-                   
-                    
-                    return result;
-                };
+                }
+
+
+                return result;
+            };
+                
+                $("#confirmAuction").click(function() {
+                    var url = getUrl();
+                    redirect(url);
+                });
                 
                 $("#showNewPage").click(function() {
-                    url = getUrl();
+                    var url = getUrl();
                     redirect(url);
                 });
                 
                 addProduct = function (el){
-                    var id = parseInt(el.value);
+                    var id = el.value;
                     if(applicationMode == appModes.PRODUCTS_COMPARISON_MODE){
-                         
-                     }
+                        //TODO
+                    }
                      else{  //we want select only one id of product 
-                         idsToShow = [];
-                         $("selectedProducts").html("");
+                         selectedCodes = [];
+                         $("#selectedProducts").html("");
                      }
-                    idsToShow.push(id);
+                    selectedCodes.push(id);
                     var name = el.options[el.selectedIndex].innerHTML;
                     
                     jQuery('<div/>', {
@@ -331,12 +371,16 @@
                 
                 addUser = function(el){
                      var userName = el.value;
+                     if(selectedUsers.indexOf(userName) != -1){ // is already there
+                         alert("User was already selected!");
+                         return;
+                     } 
                      if(applicationMode == appModes.USERS_COMPARISON_MODE){
                          
                      }
                      else{  //we want select only one user 
                          selectedUsers = [];
-                         $("selectedUsers").html("");
+                         $("#selectedUsers").html("");
                      }
                      selectedUsers.push(userName);
                      alert(userName);
@@ -349,14 +393,20 @@
                 };
                 
                 addAuction = function(el){
+                     //TODO refresh whole site because of prodycut in DELETE of aucton too
                      var auctionNameHash = el.value;
-                     var auctionName = el.textContent;
+                     var auctionName = null;
+                     for(var i = 0; i < el.length; i++){
+                         if(el[i].value == auctionNameHash){
+                             auctionName = el[i].label;
+                         }
+                     }
                      if(applicationMode == appModes.AUCTIONS_COMPARISON_MODE){
                          
                      }
                      else{  //we want select only one auction 
                          selectedAuctions = [];
-                         $("selectedAuctions").html("");
+                         $("#selectedAuctions").html("");
                      }
                      
                      if(selectedAuctions[auctionNameHash] == undefined){
@@ -377,7 +427,7 @@
                 var datesOfOffers = #{auctionBean.offersDate};
                 $('#container').highcharts({
                     chart: {
-                        type: 'spline'
+                        zoomType: 'x'
                     },
                     title: {
                         text: 'Vyvoj ceny'
@@ -386,7 +436,6 @@
                         text: ''
                     },
                     xAxis: {
-                          
                            type: 'datetime',
                             dateTimeLabelFormats: { // don't display the dummy year
                                 month: '%e. %b',
@@ -407,11 +456,39 @@
                         }
                     },
                     tooltip: {
-                        crosshairs: true,
-                        shared: true
+                        formatter: function() {
+                            return 'Value:' + this.point.y + '<br>Time: ' + new Date(this.x) + '<br>By user: <b>'+ this.point.user +'</b>';
+                         }
                     },
                     plotOptions: {
-                        spline: {
+                        series: {
+                            point: {
+                                events: {
+                                    click: function (e) {
+                                        text = "Bid from " + this.user + "<br>" ;
+                                        text += "changed " + Object.keys(this.fullOffer).length + " items <br>"; 
+                                        for (var key in this.fullOffer) {
+                                            if (this.fullOffer.hasOwnProperty(key)) {
+                                                text += key + " =>" + this.fullOffer[key];
+                                                text+= "<br><br>";
+                                                //alert(key + " -> " + p[key]);
+                                            }
+                                         }
+                                //newwindow=window.open("http://www.sme.sk/                                                                                                                                                                                                                                                                                           ",'name','height=200,width=150');
+                                //if (window.focus) {newwindow.focus()}
+                                        hs.htmlExpand(null, {
+                                             pageOrigin: {
+                                                x: e.pageX || e.clientX,
+                                                y: e.pageY || e.clientY
+                                             },
+                                            maincontentText: text,
+                                            width: 200
+                                        });
+                                    }
+                                }
+                            }
+                    },
+                    spline: {
                             marker: {
                                 radius: 4,
                                 lineColor: '#666666',
@@ -433,8 +510,7 @@
                         title: {
                             text: 'Rolozenie pod-poloziek: ' + parentName
                         },
-                        tooltip: {
-                            pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'
+                        tooltip: {                              
                         },
                         plotOptions: {
                             pie: {
@@ -459,9 +535,8 @@
                 
                 
                 function drawAllPieCharts(){
-                     for(var i = 0; i < idsToShow.length;i++){
-                            console.log(dataForPieChart);
-                            drawPieChart("pie" + idsToShow[i].toString(), dataForPieChart[i], nameOfNodes[i]);
+                     for(var i = 0; i < selectedCodes.length;i++){
+                            drawPieChart("pie" + i.toString(), dataForPieChart[i], nameOfNodes[i]);
                      }
                 }
                 drawAllPieCharts();
@@ -499,7 +574,12 @@
                         <li> ,
                             <h:form>
                                 <h:commandButton action="#{auctionBean.setAuctionComparisonMode()}" value="Comparison of auctions"/>
-                             </h:form>
+                            </h:form>
+                        </li>
+                        <li> ,
+                            <h:form>
+                                <h:commandButton action="#{auctionBean.setVisualizationMode()}" value="Visualization of auction"/>
+                            </h:form>
                         </li>    
                         <li>
                             <a href="#">Add new auctions</a>
@@ -515,39 +595,38 @@
                         <br></br>
                         <br></br> 
                       </ul>
-                    </div><!--/.nav-collapse -->
+                    </div>
                   </div>
                 </div>
               </div>
+                
             <div class="col-xs-9 col-sm-9 col-md-9">
-                <h:form>
-                    <h:selectOneMenu value="products" onchange="addProduct(this)">
-                        <f:selectItems value="#{auctionBean.allProducts}" var="node"
-                        itemValue="#{node.item_id}" itemLabel="#{node.name}"/>
-                    </h:selectOneMenu>
-                </h:form>
-                
-                <h:form>
-                    <h:selectOneMenu value="users" onchange="addUser(this)" >
-                        <f:selectItems value="#{auctionBean.allUsers}" var="user"
-                        itemValue="#{user}" itemLabel="#{user}"/>
-                    </h:selectOneMenu>
-                </h:form>
-                
-                 <h:form>
-                    <h:selectOneMenu value="auctions" onchange="addAuction(this)">
-                        <f:selectItems value="#{auctionBean.auctions}" var="auction"
-                                       itemValue="#{auction.name.hashCode()}" itemLabel="#{auction.name}"/>
-                    </h:selectOneMenu>
-                </h:form>
-                
-                
-                Users:
-                     
-                <br></br>
-                <br></br>
-                
-                <h:panelGroup id="selectedUsers">
+               <h:panelGroup rendered="#{auctionBean.selectedAnyAuction}">
+                    <h:form>
+                        <h:selectOneMenu value="products" onchange="addProduct(this)">
+                            <f:selectItems value="#{auctionBean.allProducts}" var="node"
+                            itemValue="#{node.code.trim()}" itemLabel="#{node.name} #{node.item_id}"/>
+                        </h:selectOneMenu>
+                    </h:form>
+                </h:panelGroup>
+                <h:panelGroup rendered="#{auctionBean.selectedAnyAuction}">
+                    <h:form>
+                        <h:selectOneMenu value="users" onchange="addUser(this)" >
+                            <f:selectItems value="#{auctionBean.allUsers}" var="user"
+                            itemValue="#{user}" itemLabel="#{user}"/>
+                        </h:selectOneMenu>
+                    </h:form>
+                </h:panelGroup>
+                <h:panelGroup>
+                    <h:form>
+                       <h:selectOneMenu value="auctions" onchange="addAuction(this)">
+                           <f:selectItems value="#{auctionBean.auctions}" var="auction"
+                                          itemValue="#{auction.name.hashCode()}" itemLabel="#{auction.name}"/>
+                       </h:selectOneMenu>
+                   </h:form>
+                </h:panelGroup>
+                <h:panelGroup id="selectedUsers" rendered="#{auctionBean.selectedAnyAuction}">
+                        Users:<br></br><br></br>
                         <ui:repeat var="user" value="#{auctionBean.selectedUsers}">
                             <div id="#{user}">
                               <button type='button' class='btn btn-default'> #{user}</button>
@@ -555,26 +634,20 @@
                             </div> 
                         </ui:repeat>
                 </h:panelGroup>
-                
-                products
-                     
-                <br></br>
-                <br></br>
-                
-                <h:panelGroup id="selectedProducts">
-                        <ui:repeat var="item" value="#{auctionBean.nodes}">
-                            <div id="#{item.item_id}">
+                <h:panelGroup id="selectedProducts" rendered="#{auctionBean.selectedAnyAuction}">
+                         products:<br></br><br></br>
+                    <ui:repeat var="item" value="#{auctionBean.nodes}">
+                            <div id="#{item.code}">
                               <button type='button' class='btn btn-default'> #{item.name}</button>
                               <button class='deleteFilter btn btn-danger' type='button'>-</button>
                             </div> 
                         </ui:repeat>
                 </h:panelGroup>
-                <br></br>
-                auctions
-                 <h:panelGroup id="selectedAuctions">
+                <h:panelGroup id="selectedAuctions">
+                        <br></br>Auctions:
                         <ui:repeat var="auction" value="#{auctionBean.selectedAuctionsObjects}">
                             <div id="#{auction.name.hashCode()}">
-                              <button type='button' class='btn btn-default'> #{auction.name}</button>
+                              <button type='button' class='btn btn-default'> #{auction.name} </button>
                               <button class='deleteAuction btn btn-danger' type='button'>-</button>
                             </div> 
                         </ui:repeat>
@@ -582,13 +655,98 @@
                 
                
                 
+                <h:panelGroup  rendered="#{auctionBean.selectedAnyAuction}">
+                    <button id="showNewPage" type="button" class="btn btn-success">Show</button>
+                </h:panelGroup>
                 
-                <button id="showNewPage" type="button" class="btn btn-success">Show</button>
-            </div>
-            <div id="container" style="min-width: 310px; height: 600px; margin: 0 auto"></div>
+                <h:panelGroup  rendered="#{not auctionBean.selectedAnyAuction}">
+                   <button id="confirmAuction" type="button" class="btn btn-success">Confirm Auction</button>
+                </h:panelGroup>
+
+            </div>       
+               <h:panelGroup rendered="#{not auctionBean.visualizationOfAuctionMode and auctionBean.selectedAnyCode}">                      
+                <table class="table table-striped">
+                    <tr id="headOfTableForHistory">
+                        <th>Name</th>
+                        <th>Code</th> 
+                        <th>Auction name</th>
+                        <th>Unit type</th>
+                        <th>Items</th>   
+                        <th>Value</th>
+                        <th>Value per items</th>
+                    </tr>
+                    <ui:repeat var="historyForCode" value="#{auctionBean.historyForNodes}">
+                     <ui:repeat var="nodeInAuction" value="#{historyForCode}">
+                        <tr class="nodesInHistory">
+                          <td>#{nodeInAuction.nodeName}</td>
+                          <td>#{nodeInAuction.nodeCode}</td> 
+                          <td>#{nodeInAuction.auctionName}</td>
+                          <td>#{nodeInAuction.node.unit_Type}</td>
+                          <td>#{nodeInAuction.amountOfNode}</td>
+                          <td>#{nodeInAuction.finalOfferForNode}</td>
+                          <td>#{nodeInAuction.prizePerItem}</td>
+                        </tr>
+                     </ui:repeat>
+                   </ui:repeat>
+                  </table>
+                
+             </h:panelGroup> 
+             
+             <h:panelGroup rendered="#{not auctionBean.visualizationOfAuctionMode and auctionBean.selectedAnyCode}">>
+                <table class="table table-striped">
+                    <tr>
+                        <th>Name</th>
+                        <th>Predicted value</th>
+                    </tr>
+                       <ui:repeat var="predictionNode" value="#{auctionBean.prediction}">
+                        <tr>
+                          <td>#{predictionNode.node.name}</td>
+                          <td>#{predictionNode.predictedValue}</td> 
+                        </tr>
+                     </ui:repeat>
+                   </table>
+            </h:panelGroup>
+            <h:panelGroup rendered="#{not auctionBean.visualizationOfAuctionMode}"> 
+                <div id="container" style="min-width: 100%; height: 600px; margin: 0 auto"></div>
+            </h:panelGroup>
+           
+            <br></br>
+            <br></br>
+            <br></br>
+            <br></br>
+            <br></br>
+            <br></br>
+            <br></br>
+            <br></br>
+            <br></br>
+            <br></br>
             
+            <br></br>
+            <br></br>
+            <br></br>
+            <br></br>
+            <br></br>
+            <br></br>
+            <br></br>
+            <br></br>
+            <br></br>
+            <h:panelGroup rendered="#{auctionBean.visualizationOfAuctionMode}">
+                <div class="row">                
+                    <div class="col-md-12">
+                        <div class ="tree"></div>
+                    </div> 
+                </div>
+            </h:panelGroup>
             
-             <ui:repeat var="item" value="#{auctionBean.ids}">
+            <a4j:repeat value="#{auctionBean.selectedCodes}" var="item" rowKeyVar="index">
+                 <div class="row">
+
+                     <div class="col-md-12">
+                        <div id="pie#{index}" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+                    </div> 
+                  </div>
+            </a4j:repeat>
+<!--           <ui:repeat var="item" value="#{auctionBean.selectedCodes}">
                  <div class="row">
                      
                     <div class="col-md-12">
@@ -599,7 +757,7 @@
                     </div> 
                   </div>
              </ui:repeat>
-            
+            -->
             
            </div>
         </body>

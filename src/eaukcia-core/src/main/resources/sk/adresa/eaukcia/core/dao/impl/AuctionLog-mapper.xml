@@ -22,7 +22,7 @@
      
      
      <select id = "getRequirments"  resultType="sk.adresa.eaukcia.core.data.RequirementNode" >
-        SELECT item_id, code, name, unit_Type, fk_parent, order_no
+        SELECT item_id, code, name, unit_Type, fk_parent, order_no, amount
             FROM auction_criterion_list
      </select>
      
